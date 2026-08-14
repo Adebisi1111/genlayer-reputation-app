@@ -1,0 +1,14 @@
+{
+  "name": "genlayer-reputation-app",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Interactive app for the Agent Reputation Ledger GenLayer Intelligent Contract",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "genlayer-js": "1.1.8",
+    "viem": "^2.37.2"
+  }
+}

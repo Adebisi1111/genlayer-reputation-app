@@ -12,7 +12,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { readFileSync } from "fs";
 
 // --- Config -----------------------------------------------------------------
-const LEDGER_ADDRESS = "0xeaA1e98bCb482FDe4ef840c5CfF0A7C47E185938"; // deployed reputation ledger (public methods)
+const LEDGER_ADDRESS = "0x963C5A985cA799B3dCd8b2f0cC280d3225dDb6c5"; // deployed reputation ledger (corrected consensus)
 const KEYSTORE = "/home/administrator/.genlayer/keystores/testwallet.json";
 const KEY_PASSWORD = "genlayer2026"; // keystore password set at import time
 

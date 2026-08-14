@@ -29,8 +29,8 @@ The backend connects to `testnetBradbury` and signs with the imported test walle
 
 ## Deployed contract
 
-- **Agent Reputation Ledger** (corrected consensus): `0x963C5A985cA799B3dCd8b2f0cC280d3225dDb6c5`
-- Explorer: https://explorer-bradbury.genlayer.com/address/0x963C5A985cA799B3dCd8b2f0cC280d3225dDb6c5
+- **Agent Reputation Ledger** (corrected consensus): `0xFd714076A377cb6cc23B809a0Fb66e001D5aD409`
+- Explorer: https://explorer-bradbury.genlayer.com/address/0xFd714076A377cb6cc23B809a0Fb66e001D5aD409
 - Contract source + tests: https://github.com/Adebisi1111/genlayer-reputation-ledger
 
 ## Use case

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agent Reputation Ledger — Live</title>
+<style>
+  :root{--bg:#1c130c;--panel:#241810;--butter:#e8c98a;--butter-dim:#c9a86a;--text:#f3e7d3;--muted:#a08a6b;--green:#7bd88f;--red:#e08a7a;--line:#3a2a1a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+  header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:24px}
+  .badge{display:inline-block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:var(--butter);color:var(--bg);padding:3px 10px;border-radius:999px;font-weight:700}
+  h1{font-size:26px;margin:12px 0 6px;color:var(--butter)}
+  .sub{color:var(--muted);font-size:14px}
+  h2{color:var(--butter);font-size:18px;margin:28px 0 10px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+  input,select,textarea{width:100%;background:#15100a;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px;font-size:14px;font-family:inherit}
+  button{margin-top:12px;background:var(--butter);color:var(--bg);border:0;border-radius:10px;padding:11px 16px;font-weight:700;font-size:14px;cursor:pointer}
+  button:disabled{opacity:.5;cursor:default}
+  pre{background:#15100a;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;font-size:13px;color:var(--butter-dim);white-space:pre-wrap}
+  .status{margin-top:10px;font-size:13px;color:var(--muted)}
+  .ok{color:var(--green)} .err{color:var(--red)}
+  a{color:var(--butter)}
+  .walletbar{display:flex;align-items:center;gap:12px;margin:14px 0}
+  .addr{font-size:13px;color:var(--butter-dim)}
+  .note{font-size:12px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="badge">GenLayer Project</span>
+    <h1>Agent Reputation Ledger</h1>
+    <p class="sub">Per-user wallet signing. Connect your own MetaMask (GenLayer testnet) wallet and sign every on-chain write yourself — this app holds no keys and never spends on your behalf.</p>
+  </header>
+
+  <div class="walletbar">
+    <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+    <span class="addr" id="addr">Not connected</span>
+  </div>
+  <div class="note" id="netNote"></div>
+
+  <h2>Record an outcome</h2>
+  <div class="card">
+    <label>Agent address</label>
+    <input id="agent" placeholder="0x..." value="0x61fd0047595A30A067f1F21F3b28C4AE8A8e3Dc3" />
+    <label>Outcome</label>
+    <select id="outcome">
+      <option value="SUCCESS">SUCCESS</option>
+      <option value="FAIL">FAIL</option>
+      <option value="DISPUTED_LOST">DISPUTED_LOST</option>
+    </select>
+    <label>Evidence URL</label>
+    <input id="evidence" placeholder="https://..." value="https://example.com/job-done" />
+    <button id="recordBtn" onclick="record()">Record outcome (sign with your wallet)</button>
+    <div class="status" id="recordStatus"></div>
+  </div>
+
+  <h2>Read reputation</h2>
+  <div class="card">
+    <label>Agent address</label>
+    <input id="agentRead" placeholder="0x..." value="0x61fd0047595A30A067f1F21F3b28C4AE8A8e3Dc3" />
+    <button id="readBtn" onclick="read()">Get reputation</button>
+    <pre id="repOut">—</pre>
+  </div>
+
+  <h2>Contract</h2>
+  <div class="card">
+    <p class="sub">Deployed: <a href="https://explorer-bradbury.genlayer.com/address/0xFd714076A377cb6cc23B809a0Fb66e001D5aD409" target="_blank">0xFd714076A377cb6cc23B809a0Fb66e001D5aD409</a> (Bradbury)</p>
+    <p class="sub">Intelligent Contract source + tests: <a href="https://github.com/Adebisi1111/genlayer-reputation-ledger" target="_blank">github.com/Adebisi1111/genlayer-reputation-ledger</a></p>
+  </div>
+</div>
+
+<script type="module" src="app.bundle.js"></script>
+</body>
+</html>

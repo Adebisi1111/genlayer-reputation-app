@@ -992,7 +992,7 @@ var init_size = __esm({
 var version2;
 var init_version2 = __esm({
   "node_modules/viem/_esm/errors/version.js"() {
-    version2 = "2.55.16";
+    version2 = "2.55.19";
   }
 });
 
@@ -3597,12 +3597,23 @@ function prettyPrint(args) {
   const maxLength = entries.reduce((acc, [key]) => Math.max(acc, key.length), 0);
   return entries.map(([key, value]) => `  ${`${key}:`.padEnd(maxLength + 1)}  ${value}`).join("\n");
 }
-var InvalidSerializableTransactionError, TransactionExecutionError, TransactionNotFoundError, TransactionReceiptNotFoundError, TransactionReceiptRevertedError, WaitForTransactionReceiptTimeoutError;
+var FeePayerNonceMismatchError, InvalidSerializableTransactionError, TransactionExecutionError, TransactionNotFoundError, TransactionReceiptNotFoundError, TransactionReceiptRevertedError, WaitForTransactionReceiptTimeoutError;
 var init_transaction = __esm({
   "node_modules/viem/_esm/errors/transaction.js"() {
     init_formatEther();
     init_formatGwei();
     init_base();
+    FeePayerNonceMismatchError = class extends BaseError2 {
+      constructor({ filledNonce, requestedNonce }) {
+        super("The filled transaction nonce does not match the requested nonce.", {
+          metaMessages: [
+            `Requested Nonce: ${requestedNonce}`,
+            `Filled Nonce: ${filledNonce}`
+          ],
+          name: "FeePayerNonceMismatchError"
+        });
+      }
+    };
     InvalidSerializableTransactionError = class extends BaseError2 {
       constructor({ transaction }) {
         super("Cannot infer a transaction type from provided transaction.", {
@@ -10418,6 +10429,9 @@ async function getTransactionCount(client2, { address, blockHash, blockNumber, b
   return hexToNumber(count);
 }
 
+// node_modules/viem/_esm/actions/wallet/prepareTransactionRequest.js
+init_transaction();
+
 // node_modules/viem/_esm/utils/blob/blobsToCommitments.js
 init_toBytes();
 init_toHex();
@@ -10597,6 +10611,7 @@ function getTransactionType(transaction) {
 
 // node_modules/viem/_esm/actions/public/fillTransaction.js
 init_parseAccount();
+init_transaction();
 
 // node_modules/viem/_esm/utils/errors/getTransactionError.js
 init_node();
@@ -10684,35 +10699,41 @@ async function fillTransaction(client2, parameters) {
     delete transaction.v;
     delete transaction.yParity;
     transaction.data = transaction.input;
-    if (transaction.gas)
-      transaction.gas = parameters.gas ?? transaction.gas;
-    if (transaction.gasPrice)
-      transaction.gasPrice = parameters.gasPrice ?? transaction.gasPrice;
-    if (transaction.maxFeePerBlobGas)
-      transaction.maxFeePerBlobGas = parameters.maxFeePerBlobGas ?? transaction.maxFeePerBlobGas;
-    if (transaction.maxFeePerGas)
-      transaction.maxFeePerGas = parameters.maxFeePerGas ?? transaction.maxFeePerGas;
-    if (transaction.maxPriorityFeePerGas)
-      transaction.maxPriorityFeePerGas = parameters.maxPriorityFeePerGas ?? transaction.maxPriorityFeePerGas;
-    if (typeof transaction.nonce !== "undefined")
-      transaction.nonce = parameters.nonce ?? transaction.nonce;
-    const feeMultiplier = await (async () => {
-      if (typeof chain?.fees?.baseFeeMultiplier === "function") {
-        const block = await getAction(client2, getBlock, "getBlock")({});
-        return chain.fees.baseFeeMultiplier({
-          block,
-          client: client2,
-          request: parameters
-        });
-      }
-      return chain?.fees?.baseFeeMultiplier ?? 1.2;
-    })();
-    if (feeMultiplier < 1)
-      throw new BaseFeeScalarError();
-    const decimals = feeMultiplier.toString().split(".")[1]?.length ?? 0;
-    const denominator = 10 ** decimals;
-    const multiplyFee = (base) => base * BigInt(Math.round(feeMultiplier * denominator)) / BigInt(denominator);
-    if (!transaction.feePayerSignature) {
+    const hasFeePayerSignature = typeof transaction.feePayerSignature !== "undefined" && transaction.feePayerSignature !== null;
+    if (hasFeePayerSignature && typeof nonce !== "undefined" && transaction.nonce !== nonce)
+      throw new FeePayerNonceMismatchError({
+        filledNonce: transaction.nonce,
+        requestedNonce: nonce
+      });
+    if (!hasFeePayerSignature) {
+      if (transaction.gas)
+        transaction.gas = parameters.gas ?? transaction.gas;
+      if (transaction.gasPrice)
+        transaction.gasPrice = parameters.gasPrice ?? transaction.gasPrice;
+      if (transaction.maxFeePerBlobGas)
+        transaction.maxFeePerBlobGas = parameters.maxFeePerBlobGas ?? transaction.maxFeePerBlobGas;
+      if (transaction.maxFeePerGas)
+        transaction.maxFeePerGas = parameters.maxFeePerGas ?? transaction.maxFeePerGas;
+      if (transaction.maxPriorityFeePerGas)
+        transaction.maxPriorityFeePerGas = parameters.maxPriorityFeePerGas ?? transaction.maxPriorityFeePerGas;
+      if (typeof transaction.nonce !== "undefined")
+        transaction.nonce = parameters.nonce ?? transaction.nonce;
+      const feeMultiplier = await (async () => {
+        if (typeof chain?.fees?.baseFeeMultiplier === "function") {
+          const block = await getAction(client2, getBlock, "getBlock")({});
+          return chain.fees.baseFeeMultiplier({
+            block,
+            client: client2,
+            request: parameters
+          });
+        }
+        return chain?.fees?.baseFeeMultiplier ?? 1.2;
+      })();
+      if (feeMultiplier < 1)
+        throw new BaseFeeScalarError();
+      const decimals = feeMultiplier.toString().split(".")[1]?.length ?? 0;
+      const denominator = 10 ** decimals;
+      const multiplyFee = (base) => base * BigInt(Math.round(feeMultiplier * denominator)) / BigInt(denominator);
       if (transaction.maxFeePerGas && !parameters.maxFeePerGas)
         transaction.maxFeePerGas = multiplyFee(transaction.maxFeePerGas);
       if (transaction.gasPrice && !parameters.gasPrice)
@@ -10841,6 +10862,9 @@ async function prepareTransactionRequest(client2, args) {
     const error = e;
     if (error.name !== "TransactionExecutionError")
       return request;
+    const nonceMismatch = error.walk?.((error2) => error2 instanceof FeePayerNonceMismatchError);
+    if (nonceMismatch)
+      throw e;
     const executionReverted = error.walk?.((e2) => {
       const error2 = e2;
       return error2.name === "ExecutionRevertedError";
@@ -37800,14 +37824,14 @@ var createPublicClient2 = (chainConfig, customTransport) => {
 };
 
 // public/app.mjs
-var LEDGER_ADDRESS = "0xFd714076A377cb6cc23B809a0Fb66e001D5aD409";
+var LEDGER_ADDRESS = "0x337492Dc17BC8A03040137904D539748dACaD6f4";
 var client = null;
 var account = null;
 async function connectWallet() {
   const b = document.getElementById("addr");
   const note = document.getElementById("netNote");
   try {
-    if (!window.ethereum) throw new Error("MetaMask is not installed. Please install the MetaMask browser extension.");
+    if (!window.ethereum) throw new Error("MetaMask is not installed.");
     client = createClient2({ chain: testnetBradbury });
     await client.connect("testnetBradbury");
     if (!client.account) {
@@ -37817,7 +37841,7 @@ async function connectWallet() {
     const address = typeof client.account?.address === "string" ? client.account.address : (await window.ethereum.request({ method: "eth_accounts" }))[0];
     account = client.account;
     b.textContent = "Connected: " + address;
-    note.textContent = "Signing with your MetaMask wallet (GenLayer snap) on Bradbury testnet.";
+    note.textContent = "Connected to GenLayer Bradbury testnet.";
     document.getElementById("connectBtn").disabled = true;
   } catch (e) {
     b.textContent = "Connect failed";
@@ -37832,47 +37856,153 @@ function requireWallet(bar) {
   }
   return true;
 }
-async function record() {
-  const btn = document.getElementById("recordBtn");
-  const st = document.getElementById("recordStatus");
+function validateAddress(addr) {
+  return /^0x[0-9a-fA-F]{40}$/.test(addr);
+}
+async function register() {
+  const st = document.getElementById("registerStatus");
   if (!requireWallet(st)) return;
-  btn.disabled = true;
+  const amountInput = document.getElementById("stakeAmount");
+  const amount = parseFloat(amountInput.value || "1");
+  if (isNaN(amount) || amount < 1) {
+    st.className = "status err";
+    st.textContent = "Minimum stake is 1 GEN.";
+    return;
+  }
   st.className = "status";
-  st.textContent = "Submitting \u2014 confirm in MetaMask\u2026";
+  st.textContent = "Registering \u2014 confirm in MetaMask\u2026";
   try {
     const txHash = await client.writeContract({
       address: LEDGER_ADDRESS,
-      functionName: "record_outcome",
-      args: [
-        document.getElementById("agent").value,
-        document.getElementById("outcome").value,
-        document.getElementById("evidence").value
-      ],
-      value: 0n
+      functionName: "register",
+      args: [],
+      value: BigInt(Math.floor(amount * 1e18))
     });
     st.className = "status ok";
-    st.textContent = "Recorded. Tx: " + txHash;
+    st.textContent = "Registered! Tx: " + txHash;
   } catch (e) {
     st.className = "status err";
     st.textContent = "Error: " + e.message;
   }
-  btn.disabled = false;
+}
+async function createJob() {
+  const st = document.getElementById("jobStatus");
+  if (!requireWallet(st)) return;
+  const jobId = document.getElementById("jobId").value.trim();
+  const agent = document.getElementById("jobAgent").value.trim();
+  const evidenceUrl = document.getElementById("evidenceUrl").value.trim();
+  const claimed = document.getElementById("claimed").value.trim();
+  const resolveBlock = parseInt(document.getElementById("resolveBlock").value || "1000");
+  if (!jobId) {
+    st.className = "status err";
+    st.textContent = "Job ID required.";
+    return;
+  }
+  if (!validateAddress(agent)) {
+    st.className = "status err";
+    st.textContent = "Valid agent address required.";
+    return;
+  }
+  if (!evidenceUrl || !evidenceUrl.startsWith("http")) {
+    st.className = "status err";
+    st.textContent = "Valid evidence URL required.";
+    return;
+  }
+  if (!claimed) {
+    st.className = "status err";
+    st.textContent = "Claimed delivery required.";
+    return;
+  }
+  if (isNaN(resolveBlock) || resolveBlock <= 0) {
+    st.className = "status err";
+    st.textContent = "Valid resolve block required.";
+    return;
+  }
+  st.className = "status";
+  st.textContent = "Creating job \u2014 confirm in MetaMask\u2026";
+  try {
+    const txHash = await client.writeContract({
+      address: LEDGER_ADDRESS,
+      functionName: "createJob",
+      args: [jobId, agent, evidenceUrl, claimed, resolveBlock],
+      value: 0n
+    });
+    st.className = "status ok";
+    st.textContent = "Job created! Tx: " + txHash;
+  } catch (e) {
+    st.className = "status err";
+    st.textContent = "Error: " + e.message;
+  }
+}
+async function record() {
+  const st = document.getElementById("recordStatus");
+  if (!requireWallet(st)) return;
+  const jobId = document.getElementById("recordJobId").value.trim();
+  if (!jobId) {
+    st.className = "status err";
+    st.textContent = "Job ID required.";
+    return;
+  }
+  st.className = "status";
+  st.textContent = "Recording \u2014 confirm in MetaMask\u2026";
+  try {
+    const txHash = await client.writeContract({
+      address: LEDGER_ADDRESS,
+      functionName: "record_delivery",
+      args: [jobId],
+      value: 0n
+    });
+    st.className = "status ok";
+    st.textContent = "Recorded! Tx: " + txHash;
+  } catch (e) {
+    st.className = "status err";
+    st.textContent = "Error: " + e.message;
+  }
 }
 async function read() {
   const out = document.getElementById("repOut");
   out.textContent = "Reading\u2026";
   try {
-    const agent = document.getElementById("agentRead").value;
-    const r = await fetch("/api/reputation/" + agent);
-    const d = await r.json();
-    out.textContent = JSON.stringify(d, null, 2);
+    const agent = document.getElementById("agentRead").value.trim();
+    if (!validateAddress(agent)) {
+      out.textContent = "Valid agent address required.";
+      return;
+    }
+    const result = await client.readContract({
+      address: LEDGER_ADDRESS,
+      functionName: "get_reputation",
+      args: [agent]
+    });
+    out.textContent = typeof result === "string" ? result : JSON.stringify(result, null, 2);
   } catch (e) {
-    out.textContent = "Error: " + e;
+    out.textContent = "Error: " + e.message;
+  }
+}
+async function getJob() {
+  const out = document.getElementById("jobOut");
+  out.textContent = "Loading\u2026";
+  try {
+    const jobId = document.getElementById("jobIdRead").value.trim();
+    if (!jobId) {
+      out.textContent = "Job ID required.";
+      return;
+    }
+    const result = await client.readContract({
+      address: LEDGER_ADDRESS,
+      functionName: "getJob",
+      args: [jobId]
+    });
+    out.textContent = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+  } catch (e) {
+    out.textContent = "Error: " + e.message;
   }
 }
 window.connectWallet = connectWallet;
+window.register = register;
+window.createJob = createJob;
 window.record = record;
 window.read = read;
+window.getJob = getJob;
 /*! Bundled license information:
 
 @noble/hashes/esm/utils.js:

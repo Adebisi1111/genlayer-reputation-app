@@ -21,3 +21,4 @@ Stake-weighted reputation primitive with slashing, authorization, replay protect
 
 ## Tests
 - `tests/direct/test_agent_reputation_ledger.py` (7 tests, all passing)
+# rebuild trigger

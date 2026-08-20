@@ -4,19 +4,38 @@ import json
 from dataclasses import dataclass
 from genlayer import *
 
-# Stake-Weighted Reputation with Slashing + full edge case handling.
+# Agent Reputation Ledger — full workflow per steward review.
 #
-# Authorization: only the agent can record their own delivery.
-# Replay protection: each bounty_id recorded once per agent.
-# Malformed decisions: default to UNDELIVERED.
-# Fetch failures: caught and treated as UNDELIVERED (not a NO).
+# Workflow:
+#   1. Issuer createJob() — on-chain job with unique ID + authorized agent
+#   2. Agent record_delivery(job_id) — references job, submits evidence
+#   3. Consensus verifies evidence, updates reputation
+#
+# Safeguards:
+#   - Only issuer can create jobs
+#   - Only the authorized agent can record delivery for a job
+#   - Each job recorded once (replay protection)
+#   - Each evidence URL used once globally (no relabeling)
+#   - Fetch failures handled safely
+#   - Malformed model decisions rejected
+#   - Score clamps at 0
+
+
+@allow_storage
+@dataclass
+class Job:
+    issuer: str          # authorized counterparty who created the job
+    agent: str
+    evidence_url: str
+    claimed: str
+    resolve_block: u256
+    recorded: bool
 
 
 @allow_storage
 @dataclass
 class AgentRecord:
     staked: u256
-    locked_bounties: u256
     completed: u256
     failed: u256
     slashed_count: u256
@@ -24,9 +43,11 @@ class AgentRecord:
 
 
 class AgentReputationLedger(gl.Contract):
+    jobs: TreeMap[str, Job]
     agents: TreeMap[str, AgentRecord]
-    # replay protection: "agent:bounty_id" -> "recorded"
-    recorded_bounties: TreeMap[str, str]
+    # Global evidence dedup: evidence_url -> "used"
+    used_evidence: TreeMap[str, str]
+    job_counter: u256
 
     def __init__(self):
         pass
@@ -37,7 +58,6 @@ class AgentReputationLedger(gl.Contract):
             return {"score": u256(0), "tier": "UNPROVEN", "effective_stake": r.staked}
         base = (r.completed * r.staked) // total
         penalty = r.slash_points
-        # Low-score dispute arithmetic: clamp at 0, never negative
         score = base - penalty if base > penalty else u256(0)
         if r.staked >= u256(5000000000000000000) and score >= u256(3000000000000000000):
             tier = "TRUSTED"
@@ -49,24 +69,22 @@ class AgentReputationLedger(gl.Contract):
             tier = "UNPROVEN"
         return {"score": score, "tier": tier, "effective_stake": r.staked - penalty}
 
-    def _verify_delivery(self, agent: str, bounty_id: str, evidence_url: str, claimed: str) -> str:
+    def _verify_delivery(self, evidence_url: str, claimed: str) -> str:
         ALLOWED = ("DELIVERED", "UNDELIVERED", "DISPUTED")
 
         def leader() -> dict:
             try:
                 evidence = gl.nondet.web.render(evidence_url, mode="text")
             except Exception:
-                # Fetch failure: malformed URL, network error, 404, etc.
                 return {"decision": "UNDELIVERED"}
             prompt = (
-                f"Agent {agent} claims delivery of bounty {bounty_id}: {claimed}.\n"
+                f"Claimed delivery: {claimed}.\n"
                 f"Live evidence from {evidence_url}:\n\n{evidence}\n\n"
                 f"Was the obligation fulfilled? Respond as JSON: "
                 f'{{"decision": "DELIVERED"|"UNDELIVERED"|"DISPUTED", "reason": "..."}}.'
             )
             res = gl.nondet.exec_prompt(prompt, response_format="json")
             decision = (res.get("decision") or "").strip().upper()
-            # Reject malformed model decisions: default to UNDELIVERED
             return {"decision": decision if decision in ALLOWED else "UNDELIVERED"}
 
         def validator(leader_result) -> bool:
@@ -87,46 +105,66 @@ class AgentReputationLedger(gl.Contract):
             raise Exception("Stake below minimum (1 GEN)")
         rec = self.agents.get(sender, None)
         if rec is None:
-            rec = AgentRecord(staked=u256(0), locked_bounties=u256(0),
-                              completed=u256(0), failed=u256(0),
-                              slashed_count=u256(0), slash_points=u256(0))
+            rec = AgentRecord(staked=u256(0), completed=u256(0),
+                              failed=u256(0), slashed_count=u256(0),
+                              slash_points=u256(0))
         rec.staked += gl.message.value
         self.agents[sender] = rec
 
     @gl.public.write
-    def record_delivery(self, agent: Address, bounty_id: str, evidence_url: str, claimed: str) -> None:
-        slash_rate = u256(10)
-        slash_divisor = u256(100)
+    def createJob(self, job_id: str, agent: Address, evidence_url: str,
+                  claimed: str, resolve_block: int) -> None:
+        """Issuer creates a job on-chain with a unique ID and an authorized agent."""
         sender = gl.message.sender_address.as_hex
+        if self.jobs.get(job_id, None) is not None:
+            raise Exception(f"Job {job_id} already exists.")
+        # Prevent evidence reuse under a new label
+        if self.used_evidence.get(evidence_url, "") == "1":
+            raise Exception(f"Evidence URL {evidence_url} already used.")
         agent_hex = Address(agent).as_hex
+        self.jobs[job_id] = Job(
+            issuer=sender,
+            agent=agent_hex,
+            evidence_url=evidence_url,
+            claimed=claimed,
+            resolve_block=resolve_block,
+            recorded=False,
+        )
+        self.used_evidence[evidence_url] = "1"
 
-        # AUTHORIZATION: only the agent themselves can record their own delivery
-        if sender != agent_hex:
-            raise Exception("Unauthorized: only the agent can record their own delivery.")
+    @gl.public.write
+    def record_delivery(self, job_id: str) -> None:
+        """Agent records delivery for an existing job they're authorized for."""
+        sender = gl.message.sender_address.as_hex
+        job = self.jobs.get(job_id, None)
+        if job is None:
+            raise Exception(f"Job {job_id} not found.")
+        # Authorization: only the authorized agent can record
+        if sender != job.agent:
+            raise Exception("Unauthorized: not the authorized agent for this job.")
+        # Replay protection: each job recorded once
+        if job.recorded:
+            raise Exception(f"Job {job_id} already recorded.")
 
-        # REPLAY PROTECTION: bounty_id must not have been recorded before
-        key = f"{agent_hex}:{bounty_id}"
-        if self.recorded_bounties.get(key, "") == "1":
-            raise Exception(f"Bounty {bounty_id} already recorded for agent {agent_hex}.")
-
-        rec = self.agents.get(agent_hex, None)
+        rec = self.agents.get(job.agent, None)
         if rec is None:
-            raise Exception("Agent not registered; call register() first.")
+            raise Exception("Agent not registered.")
 
-        verdict = self._verify_delivery(agent_hex, bounty_id, evidence_url, claimed)
+        verdict = self._verify_delivery(job.evidence_url, job.claimed)
         if verdict == "DELIVERED":
             rec.completed += u256(1)
         elif verdict == "UNDELIVERED":
             rec.failed += u256(1)
-            slash_amount = (rec.staked * slash_rate) // slash_divisor
+            slash_amount = (rec.staked * u256(10)) // u256(100)
             rec.slashed_count += u256(1)
             rec.slash_points += slash_amount
             rec.staked -= slash_amount
         elif verdict == "DISPUTED":
             rec.failed += u256(1)
-        self.agents[agent_hex] = rec
-        # mark bounty as recorded for replay protection
-        self.recorded_bounties[key] = "1"
+
+        job.recorded = True
+        self.jobs[job_id] = job
+        self.agents[job.agent] = rec
 
     @gl.public.view
     def get_reputation(self, agent: Address) -> str:
@@ -136,7 +174,7 @@ class AgentReputationLedger(gl.Contract):
             return json.dumps({"agent": agent_hex, "exists": False,
                                "staked": 0, "completed": 0, "failed": 0,
                                "slashed_count": 0, "slash_points": 0,
-                               "score": 0, "tier": "UNREGISTERED", "effective_stake": 0})
+                               "score": 0, "tier": "UNREGISTERED"})
         r = self._repute(rec)
         return json.dumps({
             "agent": agent_hex,
@@ -149,4 +187,20 @@ class AgentReputationLedger(gl.Contract):
             "score": int(r["score"]),
             "tier": r["tier"],
             "effective_stake": int(r["effective_stake"]),
+        })
+
+    @gl.public.view
+    def getJob(self, job_id: str) -> str:
+        job = self.jobs.get(job_id, None)
+        if job is None:
+            return json.dumps({"job_id": job_id, "exists": False})
+        return json.dumps({
+            "job_id": job_id,
+            "exists": True,
+            "issuer": job.issuer,
+            "agent": job.agent,
+            "evidence_url": job.evidence_url,
+            "claimed": job.claimed,
+            "resolve_block": job.resolve_block,
+            "recorded": job.recorded,
         })

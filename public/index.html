@@ -16,7 +16,7 @@
   h2{color:var(--butter);font-size:18px;margin:28px 0 10px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
   label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
-  input,select,textarea{width:100%;background:#15100a;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px;font-size:14px;font-family:inherit}
+  input{width:100%;background:#15100a;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px;font-size:14px;font-family:inherit}
   button{margin-top:12px;background:var(--butter);color:var(--bg);border:0;border-radius:10px;padding:11px 16px;font-weight:700;font-size:14px;cursor:pointer}
   button:disabled{opacity:.5;cursor:default}
   pre{background:#15100a;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;font-size:13px;color:var(--butter-dim);white-space:pre-wrap}
@@ -26,6 +26,7 @@
   .walletbar{display:flex;align-items:center;gap:12px;margin:14px 0}
   .addr{font-size:13px;color:var(--butter-dim)}
   .note{font-size:12px;color:var(--muted);margin-top:8px}
+  .step{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--butter-dim);margin-top:4px}
 </style>
 </head>
 <body>
@@ -33,7 +34,7 @@
   <header>
     <span class="badge">GenLayer Project</span>
     <h1>Agent Reputation Ledger</h1>
-    <p class="sub">Per-user wallet signing. Connect your own MetaMask (GenLayer testnet) wallet and sign every on-chain write yourself — this app holds no keys and never spends on your behalf.</p>
+    <p class="sub">Stake-weighted reputation with slashing, authorization, and replay protection.</p>
   </header>
 
   <div class="walletbar">
@@ -42,34 +43,63 @@
   </div>
   <div class="note" id="netNote"></div>
 
-  <h2>Record an outcome</h2>
+  <p class="sub" style="margin:20px 0 10px">Workflow: Register as agent → Issuer creates job → Agent records delivery → Read reputation</p>
+
+  <h2>1. Register</h2>
   <div class="card">
-    <label>Agent address</label>
-    <input id="agent" placeholder="0x..." value="0x61fd0047595A30A067f1F21F3b28C4AE8A8e3Dc3" />
-    <label>Outcome</label>
-    <select id="outcome">
-      <option value="SUCCESS">SUCCESS</option>
-      <option value="FAIL">FAIL</option>
-      <option value="DISPUTED_LOST">DISPUTED_LOST</option>
-    </select>
+    <p class="sub">Stake GEN to register as a tracked agent (min 1 GEN).</p>
+    <label>Stake amount (GEN)</label>
+    <input id="stakeAmount" placeholder="1.0" value="1.0" />
+    <button onclick="register()">Register</button>
+    <div class="status" id="registerStatus"></div>
+  </div>
+
+  <h2>2. Create Job (issuer)</h2>
+  <div class="card">
+    <p class="sub">Create a job with a unique ID and authorized agent.</p>
+    <label>Job ID (unique)</label>
+    <input id="jobId" placeholder="job-1" />
+    <label>Agent address (authorized)</label>
+    <input id="jobAgent" placeholder="0x..." />
     <label>Evidence URL</label>
-    <input id="evidence" placeholder="https://..." value="https://example.com/job-done" />
-    <button id="recordBtn" onclick="record()">Record outcome (sign with your wallet)</button>
+    <input id="evidenceUrl" placeholder="https://..." />
+    <label>Claimed delivery</label>
+    <input id="claimed" placeholder="Delivered successfully" />
+    <label>Resolve block</label>
+    <input id="resolveBlock" placeholder="1000" value="1000" />
+    <button onclick="createJob()">Create Job</button>
+    <div class="status" id="jobStatus"></div>
+  </div>
+
+  <h2>3. Record Delivery (agent)</h2>
+  <div class="card">
+    <p class="sub">Record delivery for a job you're authorized for.</p>
+    <label>Job ID</label>
+    <input id="recordJobId" placeholder="job-1" />
+    <button onclick="record()">Record Delivery</button>
     <div class="status" id="recordStatus"></div>
   </div>
 
-  <h2>Read reputation</h2>
+  <h2>4. Get Reputation</h2>
   <div class="card">
     <label>Agent address</label>
-    <input id="agentRead" placeholder="0x..." value="0x61fd0047595A30A067f1F21F3b28C4AE8A8e3Dc3" />
-    <button id="readBtn" onclick="read()">Get reputation</button>
+    <input id="agentRead" placeholder="0x..." />
+    <button onclick="read()">Get Reputation</button>
     <pre id="repOut">—</pre>
+  </div>
+
+  <h2>5. Get Job</h2>
+  <div class="card">
+    <label>Job ID</label>
+    <input id="jobIdRead" placeholder="job-1" />
+    <button onclick="getJob()">Get Job</button>
+    <pre id="jobOut">—</pre>
   </div>
 
   <h2>Contract</h2>
   <div class="card">
-    <p class="sub">Deployed: <a href="https://explorer-bradbury.genlayer.com/address/0xFd714076A377cb6cc23B809a0Fb66e001D5aD409" target="_blank">0xFd714076A377cb6cc23B809a0Fb66e001D5aD409</a> (Bradbury)</p>
-    <p class="sub">Intelligent Contract source + tests: <a href="https://github.com/Adebisi1111/genlayer-reputation-ledger" target="_blank">github.com/Adebisi1111/genlayer-reputation-ledger</a></p>
+    <p class="sub">Deployed: <a href="https://explorer-bradbury.genlayer.com/address/0x337492Dc17BC8A03040137904D539748dACaD6f4" target="_blank">0x337492Dc17BC8A03040137904D539748dACaD6f4</a> (Bradbury)</p>
+    <p class="sub">Source + tests: <a href="https://github.com/Adebisi1111/genlayer-reputation-app" target="_blank">github.com/Adebisi1111/genlayer-reputation-app</a></p>
   </div>
 </div>
 

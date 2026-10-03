@@ -51,6 +51,32 @@ builds its transaction actions over an inner client, so assigning
 write failed with "No account set". The account is now passed per call. Removing
 that argument reproduces the failure (7 passed, 4 failed).
 
+## The contrast that proves the slashing is real
+
+Earlier evidence showed only agents being slashed, which a reader could take
+for a permanently failing verifier rather than a working one. `e2e-contrast.mjs`
+now runs one agent through two otherwise identical jobs, differing only in
+whether GenVM can reach the evidence:
+
+| job | evidence | verdict | effect |
+|---|---|---|---|
+| reachable | a Wikipedia page GenVM can fetch | DELIVERED | `completed` +1, score rises |
+| unreachable | a host that does not resolve | UNDELIVERED | 10% of stake burned |
+
+Live result for `0x5911dCB5FeC14b43De87607cF4BacE01f6599F25`:
+
+```
+staked   20.0 GEN -> 18.0 GEN
+completed 0 -> 1
+failed    0 -> 1
+slashed   0 -> 1
+slash_points 0 -> 2.0 GEN
+tier     UNPROVEN -> TRUSTED
+```
+
+Both transactions reached `execution_result: SUCCESS`; the divergence is the
+verifier working, not a write failing.
+
 ## Tests
 
 `python3 -m pytest tests/ -q` — 23 passing.

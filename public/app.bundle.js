@@ -41273,6 +41273,7 @@ function requireWallet(bar) {
 }
 async function submitWithResult(fn, args, value = 0n) {
   const tx = await client.writeContract({
+    account,
     address: LEDGER_ADDRESS,
     functionName: fn,
     args,

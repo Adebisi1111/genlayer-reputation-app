@@ -74,8 +74,15 @@ function requireWallet(bar) {
 
 // Submit, then wait for the leader's verdict. A status of 5 means nothing:
 // the contract may have refused, and only execution_result says so.
+//
+// `account` MUST be passed here rather than set on the client. createClient
+// builds transactionActions over an INNER client, so writeContract closes over
+// that inner object's account - assigning `client.account` after connect() has
+// no effect and every write fails with "No account set", including from a real
+// MetaMask session. Passing it per call is what the SDK reads.
 async function submitWithResult(fn, args, value = 0n) {
   const tx = await client.writeContract({
+    account,
     address: LEDGER_ADDRESS,
     functionName: fn,
     args,

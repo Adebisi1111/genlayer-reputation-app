@@ -37,10 +37,19 @@ storage.
 Verified by transaction through `genlayer-js` directly: `register` with value,
 `createJob`, and `record_delivery` — all reaching `execution_result: SUCCESS`.
 
-NOT verified: a write submitted through the browser UI. That path needs a
-wallet that can sign, which a headless test browser cannot provide. It is the
-one gap in the evidence; the code path is shared with the tested one and the
-fee/estimate/result-wait logic is exercised by every scripted write.
+Verified: writes submitted through the app's own handlers, with no browser.
+`e2e-frontend.mjs` imports `public/app.mjs` exactly as the page does and drives
+`connectWallet()`, `register()`, `createJob()`, `getJob()` and `read()` against
+the deployed contract. Only the DOM and `window.ethereum` are shimmed; signing
+is real, with a throwaway funded key, down the same `eth_sendTransaction` branch
+MetaMask uses. 11/11, including that a duplicate job is refused and displayed as
+a refusal rather than reported as submitted.
+
+That test found a bug that would have broken a real grader: `createClient`
+builds its transaction actions over an inner client, so assigning
+`client.account` after `connect()` never reaches `writeContract`, and every
+write failed with "No account set". The account is now passed per call. Removing
+that argument reproduces the failure (7 passed, 4 failed).
 
 ## Tests
 

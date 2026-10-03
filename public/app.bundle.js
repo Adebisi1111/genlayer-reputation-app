@@ -41286,7 +41286,8 @@ async function submitWithResult(fn, args, value = 0n) {
       try {
         const txt = await (await fetch(`https://${host}/api/transactions/${tx}`)).text();
         if (!txt.trim().startsWith("{")) continue;
-        const lr = JSON.parse(txt)?.transaction?.consensus_data?.leader_receipt;
+        const clean2 = txt.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, " ");
+        const lr = JSON.parse(clean2)?.transaction?.consensus_data?.leader_receipt;
         const e = Array.isArray(lr) ? lr[0] : lr;
         if (!e?.execution_result) continue;
         return {

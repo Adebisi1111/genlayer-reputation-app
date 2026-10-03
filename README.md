@@ -17,8 +17,15 @@ Stake-weighted reputation primitive with slashing, authorization, replay protect
 
 ## Contract
 - `contracts/agent_reputation_ledger.py`
-- Deployed Bradbury: `0x337492Dc17BC8A03040137904D539748dACaD6f4`
-- Deployed Studio dev (61997): `0x7FD4C6eF254c0e42795cd2494deFCcBBb3D7F934`
+- Deployed Studio dev (61997): `0xC9DF9d35861696D963862Ee463bF432a5C028c8D`
+- App: https://adebisi1111.github.io/genlayer-reputation-app/
+- Deployed Bradbury (superseded): `0x337492Dc17BC8A03040137904D539748dACaD6f4`
+
+The Bradbury contract could not be staked into — `register` read
+`gl.message.value` without being declared payable, so every stake was rejected
+and no agent could leave UNREGISTERED. The 2.x runner also renamed
+`gl.vm.run_nondet_unsafe`, so every delivery failed. Both are fixed and
+covered by source-level regression tests.
 
 ## Tests
 

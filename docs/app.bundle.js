@@ -9750,6 +9750,9 @@ var __export2 = (target, all) => {
     __defProp2(target, name, { get: all[name], enumerable: true });
 };
 
+// node_modules/viem/_esm/index.js
+init_exports();
+
 // node_modules/viem/_esm/utils/getAction.js
 function getAction(client2, actionFn, name) {
   const action_implicit = client2[actionFn.name];
@@ -10379,15 +10382,15 @@ async function internal_estimateFeesPerGas(client2, args) {
   const multiply = (base) => base * BigInt(Math.round(baseFeeMultiplier * denominator)) / BigInt(denominator);
   const block = block_ ? block_ : await getAction(client2, getBlock, "getBlock")({});
   if (typeof chain?.fees?.estimateFeesPerGas === "function") {
-    const fees = await chain.fees.estimateFeesPerGas({
+    const fees2 = await chain.fees.estimateFeesPerGas({
       block: block_,
       client: client2,
       multiply,
       request,
       type
     });
-    if (fees !== null)
-      return fees;
+    if (fees2 !== null)
+      return fees2;
   }
   if (type === "eip1559") {
     if (typeof block.baseFeePerGas !== "bigint")
@@ -15861,6 +15864,11 @@ var InvalidWrappedSignatureError = class extends BaseError3 {
   }
 };
 
+// node_modules/viem/_esm/utils/signature/recoverMessageAddress.js
+async function recoverMessageAddress({ message, signature }) {
+  return recoverAddress({ hash: hashMessage(message), signature });
+}
+
 // node_modules/viem/_esm/utils/unit/formatUnits.js
 init_Value();
 function formatUnits(value, decimals) {
@@ -19013,8 +19021,11 @@ function custom(provider, config = {}) {
 // node_modules/viem/_esm/index.js
 init_base();
 init_contract();
+init_rpc();
 init_decodeErrorResult();
+init_encodeAbiParameters();
 init_encodeFunctionData();
+init_getAddress();
 init_concat();
 init_fromHex();
 init_toBytes();
@@ -19022,16 +19033,115 @@ init_toHex();
 init_keccak256();
 init_formatEther();
 
-// node_modules/genlayer-js/dist/chunk-XCQTIUTU.js
+// node_modules/genlayer-js/dist/chunk-DQFRJO5T.js
 var chains_exports = {};
 __export2(chains_exports, {
   localnet: () => localnet,
+  studioDevnet: () => studioDevnet,
   studionet: () => studionet,
   testnetAsimov: () => testnetAsimov,
   testnetBradbury: () => testnetBradbury
 });
+var feesDistributionComponents = [
+  { name: "leaderTimeunitsAllocation", type: "uint256" },
+  { name: "validatorTimeunitsAllocation", type: "uint256" },
+  { name: "appealRounds", type: "uint256" },
+  { name: "executionBudgetPerRound", type: "uint256" },
+  { name: "executionConsumed", type: "uint256" },
+  { name: "totalMessageFees", type: "uint256" },
+  { name: "rotations", type: "uint256[]" },
+  { name: "maxPriceGenPerTimeUnit", type: "uint256" },
+  { name: "storageFeeMaxGasPrice", type: "uint256" },
+  { name: "receiptFeeMaxGasPrice", type: "uint256" }
+];
+var messageAllocationComponents = [
+  { name: "messageType", type: "uint8" },
+  { name: "onAcceptance", type: "bool" },
+  { name: "parentIndex", type: "uint256" },
+  { name: "recipient", type: "address" },
+  { name: "callKey", type: "bytes32" },
+  { name: "budget", type: "uint256" },
+  { name: "feeParams", type: "bytes" }
+];
+var addTransactionParamsComponents = [
+  { name: "sender", type: "address" },
+  { name: "recipient", type: "address" },
+  { name: "numOfInitialValidators", type: "uint256" },
+  { name: "maxRotations", type: "uint256" },
+  { name: "validUntil", type: "uint256" },
+  { name: "saltNonce", type: "uint256" },
+  { name: "userValue", type: "uint256" },
+  { name: "feesDistribution", type: "tuple", components: feesDistributionComponents },
+  { name: "txCalldata", type: "bytes" },
+  { name: "messageAllocations", type: "tuple[]", components: messageAllocationComponents }
+];
+var studioConsensusMainAbi = [
+  {
+    type: "function",
+    name: "addTransaction",
+    stateMutability: "payable",
+    inputs: [{ name: "_params", type: "tuple", components: addTransactionParamsComponents }],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "deploySalted",
+    stateMutability: "payable",
+    inputs: [{ name: "_params", type: "tuple", components: addTransactionParamsComponents }],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "topUpFees",
+    stateMutability: "payable",
+    inputs: [
+      { name: "_txId", type: "bytes32" },
+      { name: "_feesDistribution", type: "tuple", components: feesDistributionComponents }
+    ],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "topUpAndSubmitAppeal",
+    stateMutability: "payable",
+    inputs: [
+      { name: "_txId", type: "bytes32" },
+      { name: "_expectedDecisionId", type: "uint256" },
+      { name: "_feesDistribution", type: "tuple", components: feesDistributionComponents }
+    ],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "submitAppeal",
+    stateMutability: "payable",
+    inputs: [
+      { name: "_txId", type: "bytes32" },
+      { name: "_expectedDecisionId", type: "uint256" }
+    ],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "finalizeTransaction",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_txId", type: "bytes32" },
+      { name: "_expectedDecisionId", type: "uint256" }
+    ],
+    outputs: []
+  }
+];
+var overriddenNames = new Set(studioConsensusMainAbi.map((entry) => entry.name));
+var withStudioConsensusMainAbi = (base) => {
+  const retained = base.filter((rawEntry) => {
+    const entry = rawEntry;
+    return entry.type !== "function" || entry.name === void 0 || !overriddenNames.has(entry.name);
+  });
+  return [...retained, ...studioConsensusMainAbi];
+};
 var SIMULATOR_JSON_RPC_URL = "http://127.0.0.1:4000/api";
-var CONSENSUS_MAIN_CONTRACT = {
+var CONSENSUS_MAIN_CONTRACT_BASE = {
   address: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
   abi: [
     {
@@ -20461,6 +20571,10 @@ var CONSENSUS_MAIN_CONTRACT = {
     }
   ],
   bytecode: ""
+};
+var CONSENSUS_MAIN_CONTRACT = {
+  ...CONSENSUS_MAIN_CONTRACT_BASE,
+  abi: withStudioConsensusMainAbi(CONSENSUS_MAIN_CONTRACT_BASE.abi)
 };
 var CONSENSUS_DATA_CONTRACT = {
   address: "0x88B0F18613Db92Bf970FfE264E02496e20a74D16",
@@ -23045,7 +23159,7 @@ var localnet = defineChain({
 });
 var SIMULATOR_JSON_RPC_URL2 = "https://studio.genlayer.com/api";
 var EXPLORER_URL = "https://genlayer-explorer.vercel.app";
-var CONSENSUS_MAIN_CONTRACT2 = {
+var CONSENSUS_MAIN_CONTRACT_BASE2 = {
   address: "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
   abi: [
     {
@@ -24475,6 +24589,10 @@ var CONSENSUS_MAIN_CONTRACT2 = {
     }
   ],
   bytecode: ""
+};
+var CONSENSUS_MAIN_CONTRACT2 = {
+  ...CONSENSUS_MAIN_CONTRACT_BASE2,
+  abi: withStudioConsensusMainAbi(CONSENSUS_MAIN_CONTRACT_BASE2.abi)
 };
 var CONSENSUS_DATA_CONTRACT2 = {
   address: "0x88B0F18613Db92Bf970FfE264E02496e20a74D16",
@@ -27057,6 +27175,19 @@ var studionet = defineChain({
   defaultNumberOfInitialValidators: 5,
   defaultConsensusMaxRotations: 3
 });
+var STUDIO_DEV_JSON_RPC_URL = "https://studio-dev.genlayer.com/api";
+var studioDevnet = defineChain({
+  ...studionet,
+  id: 61997,
+  name: "GenLayer Studio Devnet",
+  rpcUrls: {
+    default: {
+      http: [STUDIO_DEV_JSON_RPC_URL]
+    }
+  },
+  // The stable Studio explorer does not index this preview deployment.
+  blockExplorers: void 0
+});
 var VALIDATOR_WALLET_ABI = [
   // Custom errors
   { name: "NotOperator", type: "error", inputs: [] },
@@ -27105,12 +27236,42 @@ var VALIDATOR_WALLET_ABI = [
       }
     ]
   },
+  // Two-step operator rotation (CON-715). The possession proof is verified by
+  // the wallet itself, so its registrar is the wallet address rather than the
+  // ValidatorWalletFactory.
   {
-    name: "setOperator",
+    name: "initiateOperatorTransfer",
     type: "function",
     stateMutability: "nonpayable",
-    inputs: [{ name: "_operator", type: "address" }],
+    inputs: [
+      { name: "_newOperatorPubKey", type: "uint256[2]" },
+      { name: "_possessionProof", type: "bytes" }
+    ],
     outputs: []
+  },
+  {
+    name: "completeOperatorTransfer",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: []
+  },
+  {
+    name: "cancelOperatorTransfer",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: []
+  },
+  {
+    name: "getPendingOperator",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "", type: "address" },
+      { name: "", type: "uint256" }
+    ]
   },
   {
     name: "setIdentity",
@@ -27151,38 +27312,6 @@ var VALIDATOR_WALLET_ABI = [
     inputs: [],
     outputs: []
   },
-  // Two-step operator transfer
-  {
-    name: "initiateOperatorTransfer",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [{ name: "_newOperator", type: "address" }],
-    outputs: []
-  },
-  {
-    name: "completeOperatorTransfer",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [],
-    outputs: []
-  },
-  {
-    name: "cancelOperatorTransfer",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [],
-    outputs: []
-  },
-  {
-    name: "getPendingOperator",
-    type: "function",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [
-      { name: "", type: "address" },
-      { name: "", type: "uint256" }
-    ]
-  },
   {
     name: "getOperator",
     type: "function",
@@ -27190,6 +27319,20 @@ var VALIDATOR_WALLET_ABI = [
     inputs: [],
     outputs: [{ name: "", type: "address" }]
   }
+];
+var STAKING_CLAIM_COMPONENTS = [
+  { name: "quantity", type: "uint120" },
+  { name: "offset", type: "uint120" },
+  { name: "commit", type: "uint256" }
+];
+var STAKING_COMMIT_COMPONENTS = [
+  { name: "input", type: "uint256" },
+  { name: "output", type: "uint256" },
+  { name: "outstanding", type: "uint120" },
+  { name: "epoch", type: "uint64" },
+  { name: "linkToNextCommit", type: "uint56" },
+  { name: "priced", type: "bool" },
+  { name: "fragmented", type: "bool" }
 ];
 var STAKING_ABI = [
   // Custom errors from IGenLayerStaking
@@ -27548,14 +27691,14 @@ var STAKING_ABI = [
   },
   // Functions
   {
-    name: "activeValidators",
+    name: "selectableValidators",
     type: "function",
     stateMutability: "view",
     inputs: [],
     outputs: [{ name: "", type: "address[]" }]
   },
   {
-    name: "activeValidatorsCount",
+    name: "selectableValidatorsCount",
     type: "function",
     stateMutability: "view",
     inputs: [],
@@ -27619,20 +27762,12 @@ var STAKING_ABI = [
       {
         name: "claim_",
         type: "tuple",
-        components: [
-          { name: "quantity", type: "uint256" },
-          { name: "commit", type: "uint256" }
-        ]
+        components: STAKING_CLAIM_COMPONENTS
       },
       {
         name: "commit_",
         type: "tuple",
-        components: [
-          { name: "input", type: "uint256" },
-          { name: "output", type: "uint256" },
-          { name: "epoch", type: "uint256" },
-          { name: "linkToNextCommit", type: "uint256" }
-        ]
+        components: STAKING_COMMIT_COMPONENTS
       }
     ]
   },
@@ -27649,12 +27784,7 @@ var STAKING_ABI = [
       {
         name: "commit_",
         type: "tuple",
-        components: [
-          { name: "input", type: "uint256" },
-          { name: "output", type: "uint256" },
-          { name: "epoch", type: "uint256" },
-          { name: "linkToNextCommit", type: "uint256" }
-        ]
+        components: STAKING_COMMIT_COMPONENTS
       }
     ]
   },
@@ -27698,20 +27828,12 @@ var STAKING_ABI = [
       {
         name: "claim_",
         type: "tuple",
-        components: [
-          { name: "quantity", type: "uint256" },
-          { name: "commit", type: "uint256" }
-        ]
+        components: STAKING_CLAIM_COMPONENTS
       },
       {
         name: "commit_",
         type: "tuple",
-        components: [
-          { name: "input", type: "uint256" },
-          { name: "output", type: "uint256" },
-          { name: "epoch", type: "uint256" },
-          { name: "linkToNextCommit", type: "uint256" }
-        ]
+        components: STAKING_COMMIT_COMPONENTS
       }
     ]
   },
@@ -27728,12 +27850,7 @@ var STAKING_ABI = [
       {
         name: "commit_",
         type: "tuple",
-        components: [
-          { name: "input", type: "uint256" },
-          { name: "output", type: "uint256" },
-          { name: "epoch", type: "uint256" },
-          { name: "linkToNextCommit", type: "uint256" }
-        ]
+        components: STAKING_COMMIT_COMPONENTS
       }
     ]
   },
@@ -28248,12 +28365,7 @@ var STAKING_ABI = [
       {
         name: "commit_",
         type: "tuple",
-        components: [
-          { name: "input", type: "uint256" },
-          { name: "output", type: "uint256" },
-          { name: "epoch", type: "uint256" },
-          { name: "linkToNextCommit", type: "uint256" }
-        ]
+        components: STAKING_COMMIT_COMPONENTS
       }
     ]
   },
@@ -28276,12 +28388,7 @@ var STAKING_ABI = [
       {
         name: "commit_",
         type: "tuple",
-        components: [
-          { name: "input", type: "uint256" },
-          { name: "output", type: "uint256" },
-          { name: "epoch", type: "uint256" },
-          { name: "linkToNextCommit", type: "uint256" }
-        ]
+        components: STAKING_COMMIT_COMPONENTS
       }
     ]
   },
@@ -28303,14 +28410,10 @@ var STAKING_ABI = [
     name: "validatorJoin",
     type: "function",
     stateMutability: "payable",
-    inputs: [{ name: "_operator", type: "address" }],
-    outputs: [{ name: "", type: "address" }]
-  },
-  {
-    name: "validatorJoin",
-    type: "function",
-    stateMutability: "payable",
-    inputs: [],
+    inputs: [
+      { name: "_operatorPubKey", type: "uint256[2]" },
+      { name: "_possessionProof", type: "bytes" }
+    ],
     outputs: [{ name: "", type: "address" }]
   },
   {
@@ -28391,9 +28494,6 @@ var STAKING_ABI = [
         name: "",
         type: "tuple",
         components: [
-          { name: "left", type: "address" },
-          { name: "right", type: "address" },
-          { name: "parent", type: "address" },
           { name: "eBanned", type: "uint256" },
           { name: "ePrimed", type: "uint256" },
           { name: "vStake", type: "uint256" },
@@ -28417,9 +28517,6 @@ var STAKING_ABI = [
         name: "",
         type: "tuple",
         components: [
-          { name: "left", type: "address" },
-          { name: "right", type: "address" },
-          { name: "parent", type: "address" },
           { name: "eBanned", type: "uint256" },
           { name: "ePrimed", type: "uint256" },
           { name: "vStake", type: "uint256" },
@@ -28443,9 +28540,6 @@ var STAKING_ABI = [
         name: "",
         type: "tuple",
         components: [
-          { name: "left", type: "address" },
-          { name: "right", type: "address" },
-          { name: "parent", type: "address" },
           { name: "eBanned", type: "uint256" },
           { name: "ePrimed", type: "uint256" },
           { name: "vStake", type: "uint256" },
@@ -28472,12 +28566,7 @@ var STAKING_ABI = [
       {
         name: "commit_",
         type: "tuple",
-        components: [
-          { name: "input", type: "uint256" },
-          { name: "output", type: "uint256" },
-          { name: "epoch", type: "uint256" },
-          { name: "linkToNextCommit", type: "uint256" }
-        ]
+        components: STAKING_COMMIT_COMPONENTS
       }
     ]
   },
@@ -28493,12 +28582,7 @@ var STAKING_ABI = [
       {
         name: "commit_",
         type: "tuple",
-        components: [
-          { name: "input", type: "uint256" },
-          { name: "output", type: "uint256" },
-          { name: "epoch", type: "uint256" },
-          { name: "linkToNextCommit", type: "uint256" }
-        ]
+        components: STAKING_COMMIT_COMPONENTS
       }
     ]
   },
@@ -28536,13 +28620,6 @@ var STAKING_ABI = [
     stateMutability: "view",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }]
-  },
-  {
-    name: "validatorsRoot",
-    type: "function",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [{ name: "", type: "address" }]
   }
 ];
 var TESTNET_JSON_RPC_URL = "https://rpc-asimov.genlayer.com";
@@ -28950,6 +29027,31 @@ var CONSENSUS_MAIN_CONTRACT3 = {
         }
       ],
       "name": "NewTransaction",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "txId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "firstAnnouncedAt",
+          "type": "uint256"
+        }
+      ],
+      "name": "NewTransactionAlreadyAnnounced",
       "type": "event"
     },
     {
@@ -32346,6 +32448,31 @@ var CONSENSUS_MAIN_CONTRACT4 = {
       "inputs": [
         {
           "indexed": true,
+          "internalType": "bytes32",
+          "name": "txId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "firstAnnouncedAt",
+          "type": "uint256"
+        }
+      ],
+      "name": "NewTransactionAlreadyAnnounced",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
           "internalType": "address",
           "name": "previousOwner",
           "type": "address"
@@ -35324,7 +35451,7 @@ var testnetBradbury = defineChain({
   defaultConsensusMaxRotations: 3
 });
 
-// node_modules/genlayer-js/dist/chunk-EY35NPSE.js
+// node_modules/genlayer-js/dist/chunk-KBLQL6W3.js
 var CalldataAddress = class {
   bytes;
   constructor(addr) {
@@ -35333,6 +35460,48 @@ var CalldataAddress = class {
     }
     this.bytes = addr;
   }
+};
+var transactionResolutionActionNumberToName = {
+  "0": "NoOp",
+  "1": "Cancel",
+  "2": "ReplaceActor",
+  "3": "RotateLeader",
+  "4": "ResolveAppeal",
+  "5": "MaterializeDecision",
+  "6": "Finalize"
+  /* FINALIZE */
+};
+var transactionProtocolStatusNumberToName = {
+  "0": "Uninitialized",
+  "1": "Pending",
+  "2": "Proposing",
+  "3": "Committing",
+  "4": "Revealing",
+  "5": "Accepted",
+  "6": "Undetermined",
+  "7": "Finalized",
+  "8": "Canceled",
+  "9": "AppealRevealing",
+  "10": "AppealCommitting",
+  "11": "ValidatorsTimeout",
+  "12": "LeaderTimeout",
+  "13": "LeaderRevealing"
+  /* LEADER_REVEALING */
+};
+var transactionResolutionSourceNumberToName = {
+  "0": "Unspecified",
+  "1": "ActivationInsufficientValidators",
+  "2": "ProposalHanging",
+  "3": "LeaderReceiptTimeout",
+  "4": "CommitHanging",
+  "5": "LeaderRevealHanging",
+  "6": "FullReveal",
+  "7": "RevealDeadline",
+  "8": "AppealCommitHanging",
+  "9": "AppealFullReveal",
+  "10": "AppealRevealDeadline",
+  "11": "SelectionDepleted"
+  /* SELECTION_DEPLETED */
 };
 var transactionsStatusNumberToName = {
   "0": "UNINITIALIZED",
@@ -35346,10 +35515,10 @@ var transactionsStatusNumberToName = {
   "8": "CANCELED",
   "9": "APPEAL_REVEALING",
   "10": "APPEAL_COMMITTING",
-  "11": "READY_TO_FINALIZE",
-  "12": "VALIDATORS_TIMEOUT",
-  "13": "LEADER_TIMEOUT"
-  /* LEADER_TIMEOUT */
+  "11": "VALIDATORS_TIMEOUT",
+  "12": "LEADER_TIMEOUT",
+  "13": "LEADER_REVEALING"
+  /* LEADER_REVEALING */
 };
 var transactionsStatusNameToNumber = {
   [
@@ -35397,16 +35566,16 @@ var transactionsStatusNameToNumber = {
     /* APPEAL_COMMITTING */
   ]: "10",
   [
-    "READY_TO_FINALIZE"
-    /* READY_TO_FINALIZE */
-  ]: "11",
-  [
     "VALIDATORS_TIMEOUT"
     /* VALIDATORS_TIMEOUT */
-  ]: "12",
+  ]: "11",
   [
     "LEADER_TIMEOUT"
     /* LEADER_TIMEOUT */
+  ]: "12",
+  [
+    "LEADER_REVEALING"
+    /* LEADER_REVEALING */
   ]: "13"
 };
 var DECIDED_STATES = [
@@ -35425,32 +35594,86 @@ function isDecidedState(status) {
 }
 var transactionResultNumberToName = {
   "0": "IDLE",
-  "1": "AGREE",
-  "2": "DISAGREE",
-  "3": "TIMEOUT",
+  "1": "MAJORITY_AGREE",
+  "2": "MAJORITY_DISAGREE",
+  "3": "MAJORITY_TIMEOUT",
   "4": "DETERMINISTIC_VIOLATION",
-  "5": "NO_MAJORITY",
-  "6": "MAJORITY_AGREE",
-  "7": "MAJORITY_DISAGREE"
-  /* MAJORITY_DISAGREE */
+  "5": "NO_MAJORITY"
+  /* NO_MAJORITY */
 };
 var executionResultNumberToName = {
   "0": "NOT_VOTED",
   "1": "FINISHED_WITH_RETURN",
-  "2": "FINISHED_WITH_ERROR"
-  /* FINISHED_WITH_ERROR */
+  "2": "FINISHED_WITH_ERROR",
+  "3": "TIMEOUT",
+  "4": "NONDET_DISAGREE",
+  "5": "DETERMINISTIC_VIOLATION"
+  /* DETERMINISTIC_VIOLATION */
 };
 var voteTypeNumberToName = {
   "0": "NOT_VOTED",
-  "1": "AGREE",
-  "2": "DISAGREE",
+  "1": "FINISHED_WITH_RETURN",
+  "2": "FINISHED_WITH_ERROR",
   "3": "TIMEOUT",
-  "4": "DETERMINISTIC_VIOLATION"
+  "4": "NONDET_DISAGREE",
+  "5": "DETERMINISTIC_VIOLATION"
   /* DETERMINISTIC_VIOLATION */
+};
+var finalizedOutcomeFromResult = (result) => {
+  const resultName = typeof result === "number" ? transactionResultNumberToName[String(result)] : result;
+  switch (resultName) {
+    case "MAJORITY_AGREE":
+      return "accepted";
+    case "MAJORITY_TIMEOUT":
+      return "validators-timeout";
+    case "MAJORITY_DISAGREE":
+    case "DETERMINISTIC_VIOLATION":
+    case "NO_MAJORITY":
+      return "undetermined";
+    default:
+      return void 0;
+  }
+};
+var transactionLifecycleFromStoredStatus = (status, result) => {
+  const statusName = typeof status === "number" ? transactionsStatusNumberToName[String(status)] : status;
+  switch (statusName) {
+    case "UNINITIALIZED":
+      return { state: "processing", phase: "uninitialized" };
+    case "PENDING":
+      return { state: "processing", phase: "pending" };
+    case "PROPOSING":
+      return { state: "processing", phase: "proposing" };
+    case "COMMITTING":
+      return { state: "processing", phase: "committing" };
+    case "REVEALING":
+      return { state: "processing", phase: "revealing" };
+    case "APPEAL_REVEALING":
+      return { state: "processing", phase: "appeal-revealing" };
+    case "APPEAL_COMMITTING":
+      return { state: "processing", phase: "appeal-committing" };
+    case "LEADER_REVEALING":
+      return { state: "processing", phase: "leader-revealing" };
+    case "ACCEPTED":
+      return { state: "decided", outcome: "accepted" };
+    case "UNDETERMINED":
+      return { state: "decided", outcome: "undetermined" };
+    case "VALIDATORS_TIMEOUT":
+      return { state: "decided", outcome: "validators-timeout" };
+    case "LEADER_TIMEOUT":
+      return { state: "decided", outcome: "leader-timeout" };
+    case "FINALIZED": {
+      const outcome = finalizedOutcomeFromResult(result);
+      return outcome ? { state: "finalized", outcome } : { state: "finalized" };
+    }
+    case "CANCELED":
+      return { state: "canceled" };
+    default:
+      throw new Error(`Unknown stored transaction status: ${String(status)}`);
+  }
 };
 
 // node_modules/genlayer-js/dist/index.js
-function accountActions(client2) {
+function accountActions(client2, publicClient) {
   return {
     fundAccount: async ({ address, amount }) => {
       if (client2.chain?.id !== localnet.id) {
@@ -35480,10 +35703,59 @@ function accountActions(client2) {
       if (!addressToUse) {
         throw new Error("No address provided and no account is connected");
       }
-      return client2.request({
+      const count = await client2.request({
         method: "eth_getTransactionCount",
         params: [addressToUse, block]
       });
+      return Number(count);
+    },
+    /**
+     * Sends a native GEN transfer from the connected account.
+     *
+     * Local-key only: mirrors the staking/vesting executeWrite local lane 1:1
+     * (estimateGas → pending nonce → legacy prepareTransactionRequest → sign →
+     * sendRawTransaction → wait for receipt). Address-only / injected-provider
+     * accounts are intentionally rejected — provider-signed transfers are the
+     * wallet's own responsibility.
+     */
+    transfer: async ({ to, value }) => {
+      const account2 = client2.account;
+      if (!account2 || account2.type !== "local" || !account2.signTransaction) {
+        throw new Error(
+          "transfer requires a local-key account. Initialize the client with a private-key account created via createAccount()."
+        );
+      }
+      let gasLimit;
+      try {
+        gasLimit = await publicClient.estimateGas({
+          account: account2,
+          to,
+          value
+        });
+      } catch {
+        gasLimit = 21000n;
+      }
+      const nonce = await publicClient.getTransactionCount({
+        address: account2.address,
+        blockTag: "pending"
+      });
+      const txRequest = await publicClient.prepareTransactionRequest({
+        account: account2,
+        to,
+        value,
+        type: "legacy",
+        nonce,
+        gas: gasLimit,
+        chain: client2.chain
+      });
+      const signTransaction2 = account2.signTransaction;
+      const serializedTx = await signTransaction2(txRequest);
+      const hash3 = await publicClient.sendRawTransaction({ serializedTransaction: serializedTx });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: hash3 });
+      if (receipt.status === "reverted") {
+        throw new Error(`Transfer reverted (tx: ${hash3})`);
+      }
+      return receipt;
     }
   };
 }
@@ -35637,7 +35909,7 @@ function encode4(data) {
 function makeCalldataObject(method, args, kwargs) {
   let ret = {};
   if (method) {
-    ret["method"] = method;
+    ret[""] = method;
   }
   if (args && args.length > 0) {
     ret["args"] = args;
@@ -35828,13 +36100,365 @@ function serializeOne(data) {
 function serialize(data) {
   return toRlp(data.map(serializeOne));
 }
+var ADDRESS_MANAGER_ABI = [
+  {
+    inputs: [{ internalType: "string", name: "key", type: "string" }],
+    name: "getAddressNonZero",
+    outputs: [{ internalType: "address", name: "addr", type: "address" }],
+    stateMutability: "view",
+    type: "function"
+  }
+];
+var NFT_MINTER_ABI = [
+  {
+    inputs: [{ internalType: "uint256", name: "nftId", type: "uint256" }],
+    name: "claim",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function"
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "nftId", type: "uint256" },
+      { internalType: "uint256", name: "numberOfEpochsToClaim", type: "uint256" }
+    ],
+    name: "claimEpochs",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function"
+  },
+  {
+    inputs: [{ internalType: "address", name: "developer", type: "address" }],
+    name: "developerToNFT",
+    outputs: [{ internalType: "uint256", name: "nftId", type: "uint256" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "nftId", type: "uint256" }],
+    name: "getClaimableRewardsFromFees",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "nftId", type: "uint256" },
+      { internalType: "uint256", name: "numberOfEpochsToClaim", type: "uint256" }
+    ],
+    name: "getClaimableRewardsFromInflation",
+    outputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "nftId", type: "uint256" }],
+    name: "getGhostsForNFT",
+    outputs: [{ internalType: "address[]", name: "", type: "address[]" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "nftId", type: "uint256" }],
+    name: "getLastClaimedEpoch",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "nftId", type: "uint256" }],
+    name: "getNumberOfEpochsToClaim",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [{ internalType: "address", name: "developer", type: "address" }],
+    name: "hasNFT",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "nftId", type: "uint256" }],
+    name: "nfts",
+    outputs: [
+      { internalType: "address", name: "developer", type: "address" },
+      { internalType: "uint256", name: "claimableRewards", type: "uint256" },
+      { internalType: "uint256", name: "lastClaimedEpoch", type: "uint256" }
+    ],
+    stateMutability: "view",
+    type: "function"
+  }
+];
 var abi_exports = {};
 __export2(abi_exports, {
+  ADDRESS_MANAGER_ABI: () => ADDRESS_MANAGER_ABI2,
+  CONSENSUS_ADDRESS_MANAGER_ABI: () => CONSENSUS_ADDRESS_MANAGER_ABI,
+  NFT_MINTER_ABI: () => NFT_MINTER_ABI,
   STAKING_ABI: () => STAKING_ABI,
   VALIDATOR_WALLET_ABI: () => VALIDATOR_WALLET_ABI,
+  VESTING_ABI: () => VESTING_ABI,
+  VESTING_FACTORY_ABI: () => VESTING_FACTORY_ABI,
   calldata: () => calldata,
   transactions: () => transactions
 });
+var CONSENSUS_ADDRESS_MANAGER_ABI = [
+  {
+    name: "getAddressManager",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }]
+  }
+];
+var ADDRESS_MANAGER_ABI2 = [
+  { name: "ZeroAddress", type: "error", inputs: [{ name: "key", type: "string" }] },
+  { name: "ArrayLengthMismatch", type: "error", inputs: [] },
+  {
+    name: "AddressUpdated",
+    type: "event",
+    inputs: [
+      { name: "key", type: "string", indexed: true },
+      { name: "oldAddr", type: "address", indexed: true },
+      { name: "newAddr", type: "address", indexed: true }
+    ]
+  },
+  { name: "getAddress", type: "function", stateMutability: "view", inputs: [{ name: "key", type: "string" }], outputs: [{ name: "", type: "address" }] },
+  { name: "getAddressNonZero", type: "function", stateMutability: "view", inputs: [{ name: "key", type: "string" }], outputs: [{ name: "", type: "address" }] },
+  { name: "addressBook", type: "function", stateMutability: "view", inputs: [{ name: "key", type: "string" }], outputs: [{ name: "", type: "address" }] },
+  {
+    name: "getAllContractAddresses",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "tuple[]", components: [{ name: "key", type: "string" }, { name: "addr", type: "address" }] }]
+  },
+  { name: "getContractKeyCount", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] }
+];
+var VESTING_ABI = [
+  { name: "NotBeneficiary", type: "error", inputs: [] },
+  { name: "NotRevoker", type: "error", inputs: [] },
+  { name: "NotCreator", type: "error", inputs: [] },
+  { name: "NotRevocable", type: "error", inputs: [] },
+  { name: "AlreadyRevoked", type: "error", inputs: [] },
+  { name: "NotRevoked", type: "error", inputs: [] },
+  { name: "AlreadyUnlocked", type: "error", inputs: [] },
+  { name: "ManualUnlockNotRequired", type: "error", inputs: [] },
+  { name: "WithdrawExceedsVested", type: "error", inputs: [] },
+  { name: "InsufficientContractBalance", type: "error", inputs: [] },
+  { name: "ZeroAmount", type: "error", inputs: [] },
+  { name: "TransferFailed", type: "error", inputs: [] },
+  { name: "VestingAlreadyStopped", type: "error", inputs: [] },
+  { name: "VestingNotStopped", type: "error", inputs: [] },
+  { name: "InvalidStopTimestamp", type: "error", inputs: [] },
+  { name: "NoValidatorWallet", type: "error", inputs: [] },
+  { name: "InvalidAddress", type: "error", inputs: [] },
+  { name: "VestingAlreadyExists", type: "error", inputs: [] },
+  { name: "VestingDeploymentFailed", type: "error", inputs: [] },
+  { name: "BeaconNotDeployed", type: "error", inputs: [] },
+  { name: "BeaconAlreadyDeployed", type: "error", inputs: [] },
+  { name: "FundingMismatch", type: "error", inputs: [] },
+  { name: "InvalidCliffUnlockBps", type: "error", inputs: [] },
+  { name: "InvalidPeriodDuration", type: "error", inputs: [] },
+  {
+    name: "VestingInitialized",
+    type: "event",
+    inputs: [
+      { name: "name", type: "string", indexed: false },
+      { name: "beneficiary", type: "address", indexed: true },
+      { name: "totalAmount", type: "uint256", indexed: false },
+      { name: "startDate", type: "uint256", indexed: false },
+      { name: "category", type: "uint8", indexed: false }
+    ]
+  },
+  { name: "TokensWithdrawn", type: "event", inputs: [{ name: "beneficiary", type: "address", indexed: true }, { name: "amount", type: "uint256", indexed: false }] },
+  { name: "DelegatorJoined", type: "event", inputs: [{ name: "validator", type: "address", indexed: true }, { name: "amount", type: "uint256", indexed: false }] },
+  { name: "DelegatorExited", type: "event", inputs: [{ name: "validator", type: "address", indexed: true }, { name: "shares", type: "uint256", indexed: false }] },
+  { name: "DelegatorClaimed", type: "event", inputs: [{ name: "validator", type: "address", indexed: true }, { name: "returned", type: "uint256", indexed: false }, { name: "rewardOrLoss", type: "int256", indexed: false }] },
+  { name: "ValidatorJoined", type: "event", inputs: [{ name: "wallet", type: "address", indexed: true }, { name: "operator", type: "address", indexed: true }, { name: "amount", type: "uint256", indexed: false }] },
+  { name: "ValidatorDeposited", type: "event", inputs: [{ name: "wallet", type: "address", indexed: true }, { name: "amount", type: "uint256", indexed: false }] },
+  { name: "ValidatorExited", type: "event", inputs: [{ name: "wallet", type: "address", indexed: true }, { name: "shares", type: "uint256", indexed: false }] },
+  { name: "ValidatorClaimed", type: "event", inputs: [{ name: "wallet", type: "address", indexed: true }, { name: "returned", type: "uint256", indexed: false }, { name: "rewardOrLoss", type: "int256", indexed: false }] },
+  { name: "Revoked", type: "event", inputs: [{ name: "vestedAtRevocation", type: "uint256", indexed: false }, { name: "totalAmountAtRevocation", type: "uint256", indexed: false }] },
+  { name: "VestingStopped", type: "event", inputs: [{ name: "stopTimestamp", type: "uint256", indexed: false }] },
+  { name: "VestingResumed", type: "event", inputs: [] },
+  { name: "ManuallyUnlocked", type: "event", inputs: [] },
+  { name: "TopUp", type: "event", inputs: [{ name: "amount", type: "uint256", indexed: false }, { name: "reason", type: "string", indexed: false }] },
+  { name: "FoundationSwept", type: "event", inputs: [{ name: "amount", type: "uint256", indexed: false }] },
+  { name: "NameSet", type: "event", inputs: [{ name: "oldName", type: "string", indexed: false }, { name: "newName", type: "string", indexed: false }] },
+  { name: "CategorySet", type: "event", inputs: [{ name: "oldCategory", type: "uint8", indexed: false }, { name: "newCategory", type: "uint8", indexed: false }] },
+  { name: "StartDateSet", type: "event", inputs: [{ name: "oldStartDate", type: "uint256", indexed: false }, { name: "newStartDate", type: "uint256", indexed: false }] },
+  { name: "CliffDurationSet", type: "event", inputs: [{ name: "oldCliffDuration", type: "uint256", indexed: false }, { name: "newCliffDuration", type: "uint256", indexed: false }] },
+  { name: "PeriodDurationSet", type: "event", inputs: [{ name: "oldPeriodDuration", type: "uint256", indexed: false }, { name: "newPeriodDuration", type: "uint256", indexed: false }] },
+  { name: "NumberOfPeriodsSet", type: "event", inputs: [{ name: "oldNumberOfPeriods", type: "uint256", indexed: false }, { name: "newNumberOfPeriods", type: "uint256", indexed: false }] },
+  { name: "CliffUnlockBpsSet", type: "event", inputs: [{ name: "oldCliffUnlockBps", type: "uint256", indexed: false }, { name: "newCliffUnlockBps", type: "uint256", indexed: false }] },
+  { name: "BeneficiarySet", type: "event", inputs: [{ name: "oldBeneficiary", type: "address", indexed: true }, { name: "newBeneficiary", type: "address", indexed: true }] },
+  { name: "CreatorSet", type: "event", inputs: [{ name: "oldCreator", type: "address", indexed: true }, { name: "newCreator", type: "address", indexed: true }] },
+  { name: "name", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "string" }] },
+  { name: "category", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint8" }] },
+  { name: "beneficiary", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+  { name: "creator", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+  { name: "revoker", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+  { name: "factory", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+  { name: "addressManager", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+  { name: "totalAmount", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "startDate", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "cliffDuration", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "periodDuration", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "numberOfPeriods", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "cliffUnlockBps", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "needsManualUnlock", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "bool" }] },
+  { name: "manualUnlocked", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "bool" }] },
+  { name: "revoked", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "bool" }] },
+  { name: "vestingStopped", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "bool" }] },
+  { name: "totalWithdrawn", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "vestedAtRevocation", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "totalAmountAtRevocation", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "revokedAt", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "vestingStoppedAt", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "vestedAtStop", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "postRevocationBeneficiaryRewards", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "postRevocationBeneficiaryLosses", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "depositedPerValidator", type: "function", stateMutability: "view", inputs: [{ name: "validator", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
+  { name: "pendingExitDeposited", type: "function", stateMutability: "view", inputs: [{ name: "validator", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
+  { name: "accumulatedRewards", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "accumulatedLosses", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "validatorWallets", type: "function", stateMutability: "view", inputs: [{ name: "index", type: "uint256" }], outputs: [{ name: "", type: "address" }] },
+  { name: "isValidatorWallet", type: "function", stateMutability: "view", inputs: [{ name: "wallet", type: "address" }], outputs: [{ name: "", type: "bool" }] },
+  { name: "validatorDeposited", type: "function", stateMutability: "view", inputs: [{ name: "wallet", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
+  { name: "getValidatorWallets", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address[]" }] },
+  { name: "validatorWalletCount", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "vestedAmount", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "unvestedAmount", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "withdrawableAmount", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "vestingWithdraw", type: "function", stateMutability: "nonpayable", inputs: [{ name: "amount", type: "uint256" }], outputs: [] },
+  { name: "vestingDelegatorJoin", type: "function", stateMutability: "nonpayable", inputs: [{ name: "validator", type: "address" }, { name: "amount", type: "uint256" }], outputs: [] },
+  { name: "vestingDelegatorExit", type: "function", stateMutability: "nonpayable", inputs: [{ name: "validator", type: "address" }, { name: "shares", type: "uint256" }], outputs: [] },
+  { name: "vestingDelegatorClaim", type: "function", stateMutability: "nonpayable", inputs: [{ name: "validator", type: "address" }], outputs: [] },
+  {
+    name: "vestingValidatorJoin",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "operatorPubKey", type: "uint256[2]" },
+      { name: "possessionProof", type: "bytes" },
+      { name: "amount", type: "uint256" }
+    ],
+    outputs: []
+  },
+  { name: "vestingValidatorDeposit", type: "function", stateMutability: "nonpayable", inputs: [{ name: "wallet", type: "address" }, { name: "amount", type: "uint256" }], outputs: [] },
+  { name: "vestingValidatorExit", type: "function", stateMutability: "nonpayable", inputs: [{ name: "wallet", type: "address" }, { name: "shares", type: "uint256" }], outputs: [] },
+  { name: "vestingValidatorClaim", type: "function", stateMutability: "nonpayable", inputs: [{ name: "wallet", type: "address" }], outputs: [] },
+  { name: "vestingValidatorInitiateOperatorTransfer", type: "function", stateMutability: "nonpayable", inputs: [{ name: "wallet", type: "address" }, { name: "newOperator", type: "address" }], outputs: [] },
+  { name: "vestingValidatorCompleteOperatorTransfer", type: "function", stateMutability: "nonpayable", inputs: [{ name: "wallet", type: "address" }], outputs: [] },
+  { name: "vestingValidatorCancelOperatorTransfer", type: "function", stateMutability: "nonpayable", inputs: [{ name: "wallet", type: "address" }], outputs: [] },
+  {
+    name: "vestingValidatorSetIdentity",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "wallet", type: "address" },
+      { name: "moniker", type: "string" },
+      { name: "logoUri", type: "string" },
+      { name: "website", type: "string" },
+      { name: "description", type: "string" },
+      { name: "email", type: "string" },
+      { name: "twitter", type: "string" },
+      { name: "telegram", type: "string" },
+      { name: "github", type: "string" },
+      { name: "extraCid", type: "bytes" }
+    ],
+    outputs: []
+  },
+  { name: "revoke", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] },
+  { name: "stopVesting", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] },
+  { name: "resumeVesting", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] },
+  { name: "foundationSweep", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] },
+  { name: "manualUnlock", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] },
+  { name: "topUp", type: "function", stateMutability: "payable", inputs: [{ name: "reason", type: "string" }], outputs: [] },
+  { name: "setName", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_name", type: "string" }], outputs: [] },
+  { name: "setCategory", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_category", type: "uint8" }], outputs: [] },
+  { name: "setStartDate", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_startDate", type: "uint256" }], outputs: [] },
+  { name: "setCliffDuration", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_cliffDuration", type: "uint256" }], outputs: [] },
+  { name: "setPeriodDuration", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_periodDuration", type: "uint256" }], outputs: [] },
+  { name: "setNumberOfPeriods", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_numberOfPeriods", type: "uint256" }], outputs: [] },
+  { name: "setCliffUnlockBps", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_cliffUnlockBps", type: "uint256" }], outputs: [] },
+  { name: "setBeneficiary", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_beneficiary", type: "address" }], outputs: [] },
+  { name: "setCreator", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_creator", type: "address" }], outputs: [] }
+];
+var VESTING_FACTORY_ABI = [
+  { name: "InvalidAddress", type: "error", inputs: [] },
+  { name: "VestingAlreadyExists", type: "error", inputs: [] },
+  { name: "VestingDeploymentFailed", type: "error", inputs: [] },
+  { name: "BeaconNotDeployed", type: "error", inputs: [] },
+  { name: "BeaconAlreadyDeployed", type: "error", inputs: [] },
+  { name: "FundingMismatch", type: "error", inputs: [] },
+  { name: "InvalidCliffUnlockBps", type: "error", inputs: [] },
+  { name: "InvalidPeriodDuration", type: "error", inputs: [] },
+  { name: "ZeroAmount", type: "error", inputs: [] },
+  { name: "OwnableUnauthorizedAccount", type: "error", inputs: [{ name: "account", type: "address" }] },
+  { name: "OwnableInvalidOwner", type: "error", inputs: [{ name: "owner", type: "address" }] },
+  { name: "VestingCreated", type: "event", inputs: [{ name: "beneficiary", type: "address", indexed: true }, { name: "vestingContract", type: "address", indexed: true }, { name: "totalAmount", type: "uint256", indexed: false }, { name: "category", type: "uint8", indexed: false }] },
+  { name: "BeaconDeployed", type: "event", inputs: [{ name: "beacon", type: "address", indexed: true }, { name: "implementation", type: "address", indexed: true }] },
+  { name: "BeaconUpgraded", type: "event", inputs: [{ name: "newImplementation", type: "address", indexed: true }] },
+  { name: "VestingBlueprintSet", type: "event", inputs: [{ name: "blueprint", type: "address", indexed: true }] },
+  { name: "INITIALIZE_SELECTOR", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "bytes4" }] },
+  { name: "addressManager", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+  { name: "vestingBlueprint", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+  { name: "vestingBeacon", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address" }] },
+  { name: "beneficiaryToVesting", type: "function", stateMutability: "view", inputs: [{ name: "", type: "address" }], outputs: [{ name: "", type: "address" }] },
+  { name: "isVestingContract", type: "function", stateMutability: "view", inputs: [{ name: "", type: "address" }], outputs: [{ name: "", type: "bool" }] },
+  { name: "totalVestingsDeployed", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  {
+    name: "createVesting",
+    type: "function",
+    stateMutability: "payable",
+    inputs: [
+      { name: "_name", type: "string" },
+      { name: "_beneficiary", type: "address" },
+      { name: "_revoker", type: "address" },
+      { name: "_startDate", type: "uint256" },
+      { name: "_cliffDuration", type: "uint256" },
+      { name: "_periodDuration", type: "uint256" },
+      { name: "_numberOfPeriods", type: "uint256" },
+      { name: "_cliffUnlockBps", type: "uint256" },
+      { name: "_needsManualUnlock", type: "bool" },
+      { name: "_totalAmount", type: "uint256" },
+      { name: "_category", type: "uint8" }
+    ],
+    outputs: [{ name: "vestingContract", type: "address" }]
+  },
+  {
+    name: "createBatchVesting",
+    type: "function",
+    stateMutability: "payable",
+    inputs: [{ name: "params", type: "tuple[]", components: [
+      { name: "name", type: "string" },
+      { name: "beneficiary", type: "address" },
+      { name: "revoker", type: "address" },
+      { name: "startDate", type: "uint256" },
+      { name: "cliffDuration", type: "uint256" },
+      { name: "periodDuration", type: "uint256" },
+      { name: "numberOfPeriods", type: "uint256" },
+      { name: "cliffUnlockBps", type: "uint256" },
+      { name: "needsManualUnlock", type: "bool" },
+      { name: "totalAmount", type: "uint256" },
+      { name: "category", type: "uint8" }
+    ] }],
+    outputs: [{ name: "vestingContracts", type: "address[]" }]
+  },
+  { name: "deployNewBeacon", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] },
+  { name: "upgradeBeacon", type: "function", stateMutability: "nonpayable", inputs: [{ name: "newImplementation", type: "address" }], outputs: [] },
+  { name: "setVestingBlueprint", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_blueprint", type: "address" }], outputs: [] },
+  { name: "setAddressManager", type: "function", stateMutability: "nonpayable", inputs: [{ name: "_addressManager", type: "address" }], outputs: [] },
+  { name: "getVesting", type: "function", stateMutability: "view", inputs: [{ name: "_beneficiary", type: "address" }], outputs: [{ name: "", type: "address" }] },
+  { name: "getMyVestings", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address[]" }] },
+  { name: "getMyVestingCount", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "getAllVestings", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address[]" }] },
+  { name: "getAllVestingsCount", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { name: "isVestingAddress", type: "function", stateMutability: "view", inputs: [{ name: "_wallet", type: "address" }], outputs: [{ name: "", type: "bool" }] }
+];
 var calldata = calldata_exports;
 var transactions = transactions_exports;
 function b64ToArray(b64) {
@@ -35930,20 +36554,238 @@ function _toJsonSafeDeep(value, seen) {
   }
   return value;
 }
+var MESSAGE_ALLOCATION_ROOT_PARENT_INDEX = (1n << 256n) - 1n;
+var CALL_KEY_WILDCARD = "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470";
+var toUInt = (value, fieldName, fallback = 0n) => {
+  if (value === void 0) {
+    return fallback;
+  }
+  if (typeof value === "number" && !Number.isSafeInteger(value)) {
+    throw new Error(`${fieldName} must be a safe integer when provided as a number.`);
+  }
+  const normalized = BigInt(value);
+  if (normalized < 0n) {
+    throw new Error(`${fieldName} must be greater than or equal to zero.`);
+  }
+  return normalized;
+};
+var normalizeRotations = (rotations, appealRounds, fieldName) => {
+  const expectedLength = Number(appealRounds + 1n);
+  if (!Number.isSafeInteger(expectedLength)) {
+    throw new Error(`${fieldName} appealRounds is too large.`);
+  }
+  if (!rotations) {
+    return Array.from({ length: expectedLength }, () => 0n);
+  }
+  const normalized = rotations.map((rotation, index2) => toUInt(rotation, `${fieldName}[${index2}]`));
+  if (normalized.length !== expectedLength) {
+    throw new Error(`${fieldName} must contain appealRounds + 1 entries.`);
+  }
+  return normalized;
+};
+var hasNonDefaultFeesDistribution = (distribution) => {
+  return distribution.leaderTimeunitsAllocation !== 0n || distribution.validatorTimeunitsAllocation !== 0n || distribution.appealRounds !== 0n || distribution.executionBudgetPerRound !== 0n || distribution.executionConsumed !== 0n || distribution.totalMessageFees !== 0n || distribution.rotations.length !== 1 || distribution.rotations[0] !== 0n || distribution.maxPriceGenPerTimeUnit !== 0n || distribution.storageFeeMaxGasPrice !== 0n || distribution.receiptFeeMaxGasPrice !== 0n;
+};
+var createFeesDistribution = (input = {}) => {
+  const appealRounds = toUInt(input.appealRounds, "fees.distribution.appealRounds");
+  return {
+    leaderTimeunitsAllocation: toUInt(input.leaderTimeunitsAllocation, "fees.distribution.leaderTimeunitsAllocation"),
+    validatorTimeunitsAllocation: toUInt(input.validatorTimeunitsAllocation, "fees.distribution.validatorTimeunitsAllocation"),
+    appealRounds,
+    executionBudgetPerRound: toUInt(input.executionBudgetPerRound, "fees.distribution.executionBudgetPerRound"),
+    executionConsumed: toUInt(input.executionConsumed, "fees.distribution.executionConsumed"),
+    totalMessageFees: toUInt(input.totalMessageFees, "fees.distribution.totalMessageFees"),
+    rotations: normalizeRotations(input.rotations, appealRounds, "fees.distribution.rotations"),
+    maxPriceGenPerTimeUnit: toUInt(input.maxPriceGenPerTimeUnit, "fees.distribution.maxPriceGenPerTimeUnit"),
+    storageFeeMaxGasPrice: toUInt(input.storageFeeMaxGasPrice, "fees.distribution.storageFeeMaxGasPrice"),
+    receiptFeeMaxGasPrice: toUInt(input.receiptFeeMaxGasPrice, "fees.distribution.receiptFeeMaxGasPrice")
+  };
+};
+var createTopUpFeesDistribution = (input = {}) => {
+  const appealRounds = toUInt(input.appealRounds, "fees.distribution.appealRounds");
+  let rotations;
+  if (input.rotations === void 0 || input.rotations.length === 0) {
+    if (appealRounds !== 0n) {
+      throw new Error(
+        "fees.distribution.rotations must contain appealRounds + 1 entries when appealRounds is non-zero."
+      );
+    }
+    rotations = [];
+  } else {
+    rotations = normalizeRotations(input.rotations, appealRounds, "fees.distribution.rotations");
+  }
+  return {
+    leaderTimeunitsAllocation: toUInt(input.leaderTimeunitsAllocation, "fees.distribution.leaderTimeunitsAllocation"),
+    validatorTimeunitsAllocation: toUInt(input.validatorTimeunitsAllocation, "fees.distribution.validatorTimeunitsAllocation"),
+    appealRounds,
+    executionBudgetPerRound: toUInt(input.executionBudgetPerRound, "fees.distribution.executionBudgetPerRound"),
+    executionConsumed: toUInt(input.executionConsumed, "fees.distribution.executionConsumed"),
+    totalMessageFees: toUInt(input.totalMessageFees, "fees.distribution.totalMessageFees"),
+    rotations,
+    maxPriceGenPerTimeUnit: toUInt(input.maxPriceGenPerTimeUnit, "fees.distribution.maxPriceGenPerTimeUnit"),
+    storageFeeMaxGasPrice: toUInt(input.storageFeeMaxGasPrice, "fees.distribution.storageFeeMaxGasPrice"),
+    receiptFeeMaxGasPrice: toUInt(input.receiptFeeMaxGasPrice, "fees.distribution.receiptFeeMaxGasPrice")
+  };
+};
+var normalizeMessageFeeAllocations = (allocations = []) => {
+  return allocations.map((allocation, index2) => ({
+    messageType: allocation.messageType,
+    onAcceptance: allocation.onAcceptance ?? allocation.messageType !== 0,
+    parentIndex: toUInt(
+      allocation.parentIndex,
+      `fees.messageAllocations[${index2}].parentIndex`,
+      MESSAGE_ALLOCATION_ROOT_PARENT_INDEX
+    ),
+    recipient: allocation.recipient,
+    callKey: allocation.callKey ?? CALL_KEY_WILDCARD,
+    budget: toUInt(allocation.budget, `fees.messageAllocations[${index2}].budget`),
+    feeParams: allocation.feeParams ?? "0x"
+  }));
+};
+var normalizeTransactionFees = (fees2) => {
+  const distribution = createFeesDistribution(fees2?.distribution);
+  const messageAllocations = normalizeMessageFeeAllocations(fees2?.messageAllocations);
+  const feeValue = fees2?.feeValue === void 0 ? void 0 : toUInt(fees2.feeValue, "fees.feeValue");
+  return {
+    distribution,
+    messageAllocations,
+    feeValue,
+    requiresFeeAwareTransaction: hasNonDefaultFeesDistribution(distribution) || messageAllocations.length > 0 || (feeValue ?? 0n) !== 0n
+  };
+};
+var parseTrainAbi = parseAbi;
+var CONSENSUS_DATA_TRAIN_ABI = parseTrainAbi([
+  "function addressManager() view returns (address)",
+  "function getTransactionLifecycle(bytes32 _txId, uint256 _timestamp) view returns ((uint8 storedStatus, (bytes32 txId, uint8 storedStatus, uint8 projectedStatus, uint8 action, uint8 result, bytes32 resultHash, uint8 source, uint256 sourceRound, uint256 sourceGeneration, bytes32 sourceRoundContextHash, bytes32 roundPlanHash, uint256 resultRound, uint256 resultGeneration, uint256 basisDecisionId, uint8 context, bytes32 attemptId, uint256 boundaryAt, uint256 evaluatedAt, uint256 snapshotBlock, uint256 decisionWindow, uint256 appealDeadline, bool materializesDecision, bool actionOutcomeDeterministic, bool nonCurrentEvaluation) resolution, (bool exists, uint256 decisionId, uint256 basisDecisionId, uint8 context, uint8 source, bytes32 sourceAttemptId, uint8 sourceStatus, uint8 status, uint256 sourceRound, uint256 sourceGeneration, bytes32 sourceRoundContextHash, bytes32 roundPlanHash, uint256 resultRound, uint256 resultGeneration, uint8 result, bytes32 resultHash, uint256 effectiveAt, uint256 materializedAt, uint256 appealDeadline) latestDecision, bool decisionActive) lifecycle)",
+  "function estimateLatestAppealCharge(bytes32 _txId) view returns (uint256 decisionId, uint256 bond, uint256 funding, uint256 appealDeadline)"
+]);
+var ADDRESS_MANAGER_TRAIN_ABI = parseTrainAbi([
+  "function getAddress(string _name) view returns (address)"
+]);
+var CONSENSUS_DATA_BIG_ROUNDS_TRAIN_ABI = parseTrainAbi([
+  "function getStoredTransactionDataLight(bytes32 _txId) view returns ((uint256 observedAt, address sender, address recipient, uint256 initialRotations, uint256 txSlot, uint256 createdTimestamp, uint256 lastVoteTimestamp, bytes32 randomSeed, uint8 result, bytes32 txExecutionHash, bytes txCalldata, bytes eqBlocksOutputs, (uint8 messageType, address recipient, uint256 value, bytes data, bool onAcceptance, uint256 saltNonce, bytes feeParams, uint256 declaredBudget, bytes allocationSubtree, bytes32 callKey, bool useBalance)[] messages, uint8 queueType, uint256 queuePosition, address activator, address lastLeader, uint8 status, bytes32 txId, (uint256 activationBlock, uint256 processingBlock, uint256 proposalBlock) readStateBlockRange, uint256 numOfRounds, (uint256 round, uint256 leaderIndex, uint256 votesCommitted, uint256 votesRevealed, uint256 appealBond, uint256 rotationsLeft, uint8 result, uint256 validatorsCount) lastRound, uint256 consumedValidatorsCount) transaction)",
+  "function getRoundValidatorsPaged(bytes32 _txId, uint256 _round, uint256 _offset, uint256 _limit) view returns (address[] page, uint256 total)",
+  "function getConsumedValidatorsPaged(bytes32 _txId, uint256 _offset, uint256 _limit) view returns (address[] page, uint256 total)"
+]);
+var ROUNDS_STORAGE_TRAIN_READ_ABI = parseTrainAbi([
+  "function getRoundNumber(bytes32 txId) view returns (uint256)",
+  "function getLeaderIndex(bytes32 txId, uint256 round) view returns (uint256)",
+  "function getVotesCommitted(bytes32 txId, uint256 round) view returns (uint256)",
+  "function getVotesRevealed(bytes32 txId, uint256 round) view returns (uint256)",
+  "function getAppealBond(bytes32 txId, uint256 round) view returns (uint256)",
+  "function getRotationsLeft(bytes32 txId, uint256 round) view returns (uint256)",
+  "function getResult(bytes32 txId, uint256 round) view returns (uint8)",
+  "function getRoundValidatorsPage(bytes32 txId, uint256 round, uint256 offset, uint256 pageSize) view returns (address[] validators, uint256 total)",
+  "function getValidatorVotes(bytes32 txId, uint256 round) view returns (uint8[] votes)",
+  "function getValidatorVotesHash(bytes32 txId, uint256 round) view returns (bytes32[] hashes)",
+  "function getValidatorResultHash(bytes32 txId, uint256 round) view returns (bytes32[] hashes)"
+]);
+var TRANSACTION_MANAGER_TRAIN_READ_ABI = parseTrainAbi([
+  "function getTxExecutionResult(bytes32 txId) view returns (uint8)",
+  "function getNumOfInitialValidators(bytes32 txId) view returns (uint256)"
+]);
+var prefixHex = (hex) => {
+  return hex.startsWith("0x") ? hex : `0x${hex}`;
+};
 function extractGenCallResult(result) {
   if (typeof result === "string") {
-    return `0x${result}`;
+    return prefixHex(result);
   }
   if (result && typeof result === "object" && "data" in result) {
     const obj = result;
     if (obj.status && obj.status.code !== 0) {
       throw new Error(`gen_call failed: ${obj.status.message}`);
     }
-    return `0x${obj.data}`;
+    return prefixHex(obj.data);
   }
-  throw new Error(`Unexpected gen_call response: ${JSON.stringify(result)}`);
+  if (result && typeof result === "object" && "result" in result) {
+    const obj = result;
+    if (obj.execution_result && obj.execution_result !== "SUCCESS") {
+      throw new Error(`sim_call failed: ${obj.execution_result}`);
+    }
+    if (typeof obj.result === "string" && obj.result.startsWith("0x")) {
+      return prefixHex(obj.result);
+    }
+    const resultBytes = b64ToArray(obj.result);
+    if (resultBytes.length === 0) {
+      throw new Error("sim_call returned an empty result payload");
+    }
+    return toHex(resultBytes.slice(1));
+  }
+  throw new Error(`Unexpected simulation response: ${JSON.stringify(result)}`);
+}
+function normalizeGenCallReceipt(result, data) {
+  if (result && typeof result === "object" && !Array.isArray(result)) {
+    return result;
+  }
+  return { data };
+}
+function extractGenCallFeeAccounting(result) {
+  if (!result || typeof result !== "object" || Array.isArray(result)) return void 0;
+  const genvmResult = result.genvm_result;
+  if (!genvmResult || typeof genvmResult !== "object" || Array.isArray(genvmResult)) return void 0;
+  const feeAccounting = genvmResult.fee_accounting;
+  if (!feeAccounting || typeof feeAccounting !== "object" || Array.isArray(feeAccounting)) return void 0;
+  return feeAccounting;
+}
+function extractGenCallFeeReport(feeAccounting) {
+  const report2 = feeAccounting?.execution_fee_report;
+  if (!report2 || typeof report2 !== "object" || Array.isArray(report2)) return void 0;
+  return report2;
+}
+function transactionFeesToRpc(fees2) {
+  if (!fees2) return void 0;
+  const normalized = normalizeTransactionFees(fees2);
+  return {
+    distribution: {
+      leaderTimeunitsAllocation: normalized.distribution.leaderTimeunitsAllocation.toString(),
+      validatorTimeunitsAllocation: normalized.distribution.validatorTimeunitsAllocation.toString(),
+      appealRounds: normalized.distribution.appealRounds.toString(),
+      executionBudgetPerRound: normalized.distribution.executionBudgetPerRound.toString(),
+      executionConsumed: normalized.distribution.executionConsumed.toString(),
+      totalMessageFees: normalized.distribution.totalMessageFees.toString(),
+      rotations: normalized.distribution.rotations.map((rotation) => rotation.toString()),
+      maxPriceGenPerTimeUnit: normalized.distribution.maxPriceGenPerTimeUnit.toString(),
+      storageFeeMaxGasPrice: normalized.distribution.storageFeeMaxGasPrice.toString(),
+      receiptFeeMaxGasPrice: normalized.distribution.receiptFeeMaxGasPrice.toString()
+    },
+    messageAllocations: normalized.messageAllocations.map((allocation) => ({
+      messageType: allocation.messageType,
+      onAcceptance: allocation.onAcceptance,
+      parentIndex: allocation.parentIndex.toString(),
+      recipient: allocation.recipient,
+      callKey: allocation.callKey,
+      budget: allocation.budget.toString(),
+      feeParams: allocation.feeParams
+    })),
+    ...normalized.feeValue === void 0 ? {} : { feeValue: normalized.feeValue.toString() }
+  };
 }
 var contractActions = (client2, publicClient) => {
+  const estimateFeeValue = async (distribution, policy) => {
+    if (client2.chain.feeManagerContract?.address) {
+      const roundFees = await publicClient.readContract({
+        address: client2.chain.feeManagerContract.address,
+        abi: FEE_MANAGER_CALCULATE_ROUND_FEES_ABI,
+        functionName: "calculateRoundFees",
+        args: [
+          distribution,
+          BigInt(client2.chain.defaultNumberOfInitialValidators),
+          0n
+        ]
+      });
+      return roundFees + distribution.totalMessageFees;
+    }
+    if (client2.chain.isStudio) {
+      const studioPolicy = policy ?? await readCurrentFeePolicy(client2, publicClient);
+      return calculateLocalRoundFees(
+        distribution,
+        client2.chain.defaultNumberOfInitialValidators,
+        studioPolicy
+      ) + distribution.totalMessageFees;
+    }
+    throw new Error("Fee value estimation is not supported on this chain (missing feeManagerContract).");
+  };
   return {
     /** Retrieves the source code of a deployed contract. */
     getContractCode: async (address) => {
@@ -36037,6 +36879,8 @@ var contractActions = (client2, publicClient) => {
         functionName,
         args: callArgs,
         kwargs,
+        value,
+        fees: fees2,
         leaderOnly = false,
         transactionHashVariant = "latest-nonfinal"
         /* LATEST_NONFINAL */
@@ -36051,16 +36895,37 @@ var contractActions = (client2, publicClient) => {
         data: serializedData,
         transaction_hash_variant: transactionHashVariant
       };
+      const userValue = toUInt2(value, "value", 0n);
+      if (userValue > 0n) {
+        requestParams.value = toHex(userValue);
+      }
+      const rpcFees = transactionFeesToRpc(fees2);
+      if (rpcFees) {
+        requestParams.fees = rpcFees;
+      }
+      const simulationMethod = args.includeReceipt && client2.chain.isStudio ? "sim_call" : "gen_call";
       const result = await client2.request({
-        method: "gen_call",
+        method: simulationMethod,
         params: [requestParams]
       });
       const prefixedResult = extractGenCallResult(result);
+      let decodedResult;
       if (args.rawReturn) {
-        return prefixedResult;
+        decodedResult = prefixedResult;
+      } else {
+        const resultBinary = fromHex(prefixedResult, "bytes");
+        decodedResult = decode2(resultBinary);
       }
-      const resultBinary = fromHex(prefixedResult, "bytes");
-      return decode2(resultBinary);
+      if (args.includeReceipt) {
+        const feeAccounting = extractGenCallFeeAccounting(result);
+        return {
+          result: decodedResult,
+          receipt: normalizeGenCallReceipt(result, prefixedResult),
+          feeAccounting,
+          feeReport: extractGenCallFeeReport(feeAccounting)
+        };
+      }
+      return decodedResult;
     },
     /** Executes a state-modifying function on a contract through consensus. Returns the transaction hash. */
     writeContract: async (args) => {
@@ -36072,25 +36937,34 @@ var contractActions = (client2, publicClient) => {
         kwargs,
         value = 0n,
         leaderOnly = false,
-        consensusMaxRotations = client2.chain.defaultConsensusMaxRotations
+        consensusMaxRotations = client2.chain.defaultConsensusMaxRotations,
+        validUntil,
+        fees: fees2
       } = args;
       const data = [encode4(makeCalldataObject(functionName, callArgs, kwargs)), leaderOnly];
       const serializedData = serialize(data);
       const senderAccount = account2 || client2.account;
-      const { primaryEncodedData, fallbackEncodedData } = _encodeAddTransactionData({
+      const transactionFees = await _resolveTransactionFees({
+        client: client2,
+        publicClient,
+        fees: fees2,
+        numOfInitialValidators: client2.chain.defaultNumberOfInitialValidators
+      });
+      const transactionVariants = _encodeAddTransactionData({
         client: client2,
         senderAccount,
         recipient: address,
         data: serializedData,
-        consensusMaxRotations
+        consensusMaxRotations,
+        validUntil,
+        userValue: value,
+        transactionFees
       });
       return _sendTransaction({
         client: client2,
         publicClient,
-        encodedData: primaryEncodedData,
-        fallbackEncodedData,
-        senderAccount,
-        value
+        transactionVariants,
+        senderAccount
       });
     },
     /** Deploys a new intelligent contract to GenLayer. Returns the transaction hash. */
@@ -36101,7 +36975,9 @@ var contractActions = (client2, publicClient) => {
         args: constructorArgs,
         kwargs,
         leaderOnly = false,
-        consensusMaxRotations = client2.chain.defaultConsensusMaxRotations
+        consensusMaxRotations = client2.chain.defaultConsensusMaxRotations,
+        validUntil,
+        fees: fees2
       } = args;
       const data = [
         code,
@@ -36110,42 +36986,197 @@ var contractActions = (client2, publicClient) => {
       ];
       const serializedData = serialize(data);
       const senderAccount = account2 || client2.account;
-      const { primaryEncodedData, fallbackEncodedData } = _encodeAddTransactionData({
+      const transactionFees = await _resolveTransactionFees({
+        client: client2,
+        publicClient,
+        fees: fees2,
+        numOfInitialValidators: client2.chain.defaultNumberOfInitialValidators
+      });
+      const transactionVariants = _encodeAddTransactionData({
         client: client2,
         senderAccount,
         recipient: zeroAddress,
         data: serializedData,
-        consensusMaxRotations
+        consensusMaxRotations,
+        validUntil,
+        userValue: 0n,
+        transactionFees
       });
       return _sendTransaction({
         client: client2,
         publicClient,
-        encodedData: primaryEncodedData,
-        fallbackEncodedData,
+        transactionVariants,
         senderAccount
       });
     },
-    /** Calculates the minimum bond required to appeal a transaction. */
-    getMinAppealBond: async (args) => {
-      const { txId } = args;
-      if (!client2.chain.feeManagerContract?.address || !client2.chain.roundsStorageContract?.address) {
-        throw new Error("Appeal bond calculation not supported on this chain (missing feeManagerContract/roundsStorageContract)");
+    /** Returns the active fee price policy used to build user-side caps. */
+    getCurrentFeePolicy: async () => {
+      return readCurrentFeePolicy(client2, publicClient);
+    },
+    /**
+     * Builds a fee distribution with caps derived from the active fee policy.
+     * Omitted rotations fund the chain's configured consensus maximum.
+     */
+    estimateFeesDistribution: async (args) => {
+      const policy = await readCurrentFeePolicy(client2, publicClient);
+      return buildEstimatedFeesDistribution(
+        args,
+        policy,
+        client2.chain.defaultConsensusMaxRotations
+      );
+    },
+    /**
+     * Builds a complete transaction `fees` object, including feeValue.
+     * Studio has no on-chain FeeManager in the chain definition, so this uses
+     * the same deterministic round-fee math as Studio trusted mode there.
+     */
+    estimateTransactionFees: async (args) => {
+      const policy = await readCurrentFeePolicy(client2, publicClient);
+      const distribution = buildEstimatedFeesDistribution(
+        args,
+        policy,
+        client2.chain.defaultConsensusMaxRotations
+      );
+      return {
+        distribution,
+        messageAllocations: args?.messageAllocations,
+        feeValue: await estimateFeeValue(distribution, policy),
+        policy
+      };
+    },
+    /**
+     * Builds a trusted fee preset from a representative Studio simulation.
+     * This turns the returned fee accounting/report into execution and message
+     * budgets while preserving mode-2 message allocations when the simulation
+     * was run with them.
+     */
+    estimateTransactionFeesFromSimulation: async (args) => {
+      const policy = await readCurrentFeePolicy(client2, publicClient);
+      const { estimateOptions, observed, messageAllocations } = buildEstimatedFeesOptionsFromSimulation(args, policy);
+      const distribution = buildEstimatedFeesDistribution(
+        estimateOptions,
+        policy,
+        client2.chain.defaultConsensusMaxRotations
+      );
+      return {
+        distribution,
+        messageAllocations,
+        feeValue: await estimateFeeValue(distribution, policy),
+        policy,
+        observed
+      };
+    },
+    /**
+     * Builds a trusted fee preset for a concrete write call in one step.
+     * The method first gives the simulation a baseline fee budget, then uses
+     * the returned Studio/GenVM fee accounting to derive the preset the dapp
+     * should pass with the real transaction.
+     */
+    estimateTransactionFeesForWrite: async (args) => {
+      const {
+        account: account2,
+        address,
+        functionName,
+        args: callArgs,
+        kwargs,
+        value,
+        leaderOnly = false,
+        transactionHashVariant = "latest-nonfinal",
+        executionHeadroomBps,
+        messageHeadroomBps,
+        ...feeOptions
+      } = args;
+      const policy = await readCurrentFeePolicy(client2, publicClient);
+      const initialDistribution = buildEstimatedFeesDistribution(
+        feeOptions,
+        policy,
+        client2.chain.defaultConsensusMaxRotations
+      );
+      const initialEstimate = {
+        distribution: initialDistribution,
+        messageAllocations: feeOptions.messageAllocations,
+        feeValue: await estimateFeeValue(initialDistribution, policy),
+        policy
+      };
+      const encodedData = [
+        encode4(makeCalldataObject(functionName, callArgs, kwargs)),
+        leaderOnly
+      ];
+      const serializedData = serialize(encodedData);
+      const senderAddress = account2?.address ?? client2.account?.address ?? zeroAddress;
+      const requestParams = {
+        type: "write",
+        to: address,
+        from: senderAddress,
+        data: serializedData,
+        transaction_hash_variant: transactionHashVariant
+      };
+      const userValue = toUInt2(value, "value", 0n);
+      if (userValue > 0n) {
+        requestParams.value = toHex(userValue);
       }
-      const roundNumber = await publicClient.readContract({
-        address: client2.chain.roundsStorageContract.address,
-        abi: client2.chain.roundsStorageContract.abi,
-        functionName: "getRoundNumber",
-        args: [txId]
+      const rpcFees = transactionFeesToRpc({
+        distribution: initialEstimate.distribution,
+        messageAllocations: initialEstimate.messageAllocations,
+        feeValue: initialEstimate.feeValue
       });
-      const transaction = await client2.getTransaction({ hash: txId });
-      const txStatus = Number(transaction.status);
-      const minBond = await publicClient.readContract({
-        address: client2.chain.feeManagerContract.address,
-        abi: client2.chain.feeManagerContract.abi,
-        functionName: "calculateMinAppealBond",
-        args: [txId, roundNumber, txStatus]
+      if (rpcFees) {
+        requestParams.fees = rpcFees;
+      }
+      if (client2.chain.isStudio) {
+        const studioEstimate = await client2.request({
+          method: "sim_estimateTransactionFees",
+          params: [requestParams]
+        });
+        const authoritativeEstimate = transactionFeeEstimateFromStudioEstimate(
+          studioEstimate,
+          policy
+        );
+        if (authoritativeEstimate) {
+          return authoritativeEstimate;
+        }
+      }
+      const simulationResult = await client2.request({
+        method: "gen_call",
+        params: [requestParams]
       });
-      return minBond;
+      extractGenCallResult(simulationResult);
+      const feeAccounting = extractGenCallFeeAccounting(simulationResult);
+      const simulation = {
+        feeAccounting,
+        feeReport: extractGenCallFeeReport(feeAccounting)
+      };
+      const { estimateOptions, observed, messageAllocations } = buildEstimatedFeesOptionsFromSimulation(
+        {
+          ...feeOptions,
+          executionHeadroomBps,
+          messageHeadroomBps,
+          simulation
+        },
+        policy
+      );
+      const distribution = buildEstimatedFeesDistribution(
+        estimateOptions,
+        policy,
+        client2.chain.defaultConsensusMaxRotations
+      );
+      return {
+        distribution,
+        messageAllocations,
+        feeValue: await estimateFeeValue(distribution, policy),
+        policy,
+        observed
+      };
+    },
+    /** Returns the full authoritative appeal charge (bond plus appeal funding). */
+    getAppealCharge: async (args) => {
+      const context = await _readAppealContext({ client: client2, publicClient, txId: args.txId });
+      return context.requiredValue;
+    },
+    /** @deprecated Use getAppealCharge. This legacy name also returns bond plus appeal funding. */
+    getMinAppealBond: async (args) => {
+      const context = await _readAppealContext({ client: client2, publicClient, txId: args.txId });
+      return context.requiredValue;
     },
     /** Returns the current consensus round number for a transaction. */
     getRoundNumber: async (args) => {
@@ -36154,7 +37185,7 @@ var contractActions = (client2, publicClient) => {
       }
       return publicClient.readContract({
         address: client2.chain.roundsStorageContract.address,
-        abi: client2.chain.roundsStorageContract.abi,
+        abi: ROUNDS_STORAGE_TRAIN_READ_ABI,
         functionName: "getRoundNumber",
         args: [args.txId]
       });
@@ -36164,11 +37195,13 @@ var contractActions = (client2, publicClient) => {
       if (!client2.chain.roundsStorageContract?.address) {
         throw new Error("getRoundData not supported on this chain (missing roundsStorageContract)");
       }
-      return publicClient.readContract({
+      const snapshot = await publicClient.getBlock();
+      return _readRoundDataSnapshot({
+        publicClient,
         address: client2.chain.roundsStorageContract.address,
-        abi: client2.chain.roundsStorageContract.abi,
-        functionName: "getRoundData",
-        args: [args.txId, args.round]
+        txId: args.txId,
+        round: args.round,
+        blockNumber: snapshot.number
       });
     },
     /** Returns the current round number and its data for a transaction. */
@@ -36176,51 +37209,179 @@ var contractActions = (client2, publicClient) => {
       if (!client2.chain.roundsStorageContract?.address) {
         throw new Error("getLastRoundData not supported on this chain (missing roundsStorageContract)");
       }
-      return publicClient.readContract({
-        address: client2.chain.roundsStorageContract.address,
-        abi: client2.chain.roundsStorageContract.abi,
-        functionName: "getLastRoundData",
-        args: [args.txId]
+      const snapshot = await publicClient.getBlock();
+      const address = client2.chain.roundsStorageContract.address;
+      const round = await publicClient.readContract({
+        address,
+        abi: ROUNDS_STORAGE_TRAIN_READ_ABI,
+        functionName: "getRoundNumber",
+        args: [args.txId],
+        blockNumber: snapshot.number
       });
+      const roundData = await _readRoundDataSnapshot({
+        publicClient,
+        address,
+        txId: args.txId,
+        round,
+        blockNumber: snapshot.number
+      });
+      return Object.assign(
+        [round, roundData],
+        { round, roundData }
+      );
     },
     /** Checks if a transaction can be appealed. */
     canAppeal: async (args) => {
+      if (client2.chain.isStudio) {
+        const context2 = await _readLifecycleIdentity({ client: client2, publicClient, txId: args.txId });
+        if (!context2.decisionActive) return false;
+        try {
+          const quote = await client2.request({
+            method: "gen_estimateLatestAppealCharge",
+            params: [{ txId: args.txId }]
+          });
+          return BigInt(String(quote.decisionId)) === context2.decisionId;
+        } catch (error) {
+          if (/CanNotAppeal/i.test(String(error))) return false;
+          throw error;
+        }
+      }
       if (!client2.chain.appealsContract?.address) {
         throw new Error("canAppeal not supported on this chain (missing appealsContract)");
       }
+      const context = await _readLifecycleIdentity({ client: client2, publicClient, txId: args.txId });
+      if (!context.decisionActive) return false;
       return publicClient.readContract({
         address: client2.chain.appealsContract.address,
-        abi: client2.chain.appealsContract.abi,
+        abi: APPEALS_TRAIN_ABI,
         functionName: "canAppeal",
-        args: [args.txId]
+        args: [args.txId, context.decisionId],
+        blockNumber: context.blockNumber
       });
     },
-    /** Appeals a consensus transaction to trigger a new round of validation. */
+    /** Returns a developer's NFT reward record, or null when no NFT is registered. */
+    getDeveloperNft: async (args) => {
+      const nftMinterAddress = await _resolveNftMinterAddress({ client: client2, publicClient });
+      const nftId = await publicClient.readContract({
+        address: nftMinterAddress,
+        abi: NFT_MINTER_ABI,
+        functionName: "developerToNFT",
+        args: [args.developer]
+      });
+      if (nftId === 0n) {
+        return null;
+      }
+      const [nftData, ghosts] = await Promise.all([
+        publicClient.readContract({
+          address: nftMinterAddress,
+          abi: NFT_MINTER_ABI,
+          functionName: "nfts",
+          args: [nftId]
+        }),
+        publicClient.readContract({
+          address: nftMinterAddress,
+          abi: NFT_MINTER_ABI,
+          functionName: "getGhostsForNFT",
+          args: [nftId]
+        })
+      ]);
+      return {
+        nftId,
+        developer: nftData.developer ?? nftData[0],
+        claimableRewards: nftData.claimableRewards ?? nftData[1],
+        lastClaimedEpoch: nftData.lastClaimedEpoch ?? nftData[2],
+        ghosts
+      };
+    },
+    /** Returns claimable developer-NFT rewards accrued from transaction fees. */
+    getClaimableRewardsFromFees: async (args) => {
+      const nftMinterAddress = await _resolveNftMinterAddress({ client: client2, publicClient });
+      const nftId = toUInt2(args.nftId, "nftId", 0n);
+      return publicClient.readContract({
+        address: nftMinterAddress,
+        abi: NFT_MINTER_ABI,
+        functionName: "getClaimableRewardsFromFees",
+        args: [nftId]
+      });
+    },
+    /** Returns claimable developer-NFT rewards accrued from inflation. */
+    getClaimableRewardsFromInflation: async (args) => {
+      const nftMinterAddress = await _resolveNftMinterAddress({ client: client2, publicClient });
+      const nftId = toUInt2(args.nftId, "nftId", 0n);
+      const numberOfEpochsToClaim = toUInt2(
+        args.numberOfEpochsToClaim,
+        "numberOfEpochsToClaim",
+        0n
+      );
+      return publicClient.readContract({
+        address: nftMinterAddress,
+        abi: NFT_MINTER_ABI,
+        functionName: "getClaimableRewardsFromInflation",
+        args: [nftId, numberOfEpochsToClaim]
+      });
+    },
+    /** Claims all currently available rewards for a developer NFT. Returns the EVM transaction hash. */
+    claimNftRewards: async (args) => {
+      const nftMinterAddress = await _resolveNftMinterAddress({ client: client2, publicClient });
+      const encodedData = encodeFunctionData({
+        abi: NFT_MINTER_ABI,
+        functionName: "claim",
+        args: [toUInt2(args.nftId, "nftId", 0n)]
+      });
+      return _sendEvmContractCall({
+        client: client2,
+        publicClient,
+        to: nftMinterAddress,
+        encodedData,
+        senderAccount: args.account || client2.account,
+        operationName: "Claim NFT rewards"
+      });
+    },
+    /** Claims a bounded number of reward epochs for a developer NFT. Returns the EVM transaction hash. */
+    claimNftEpochs: async (args) => {
+      const nftMinterAddress = await _resolveNftMinterAddress({ client: client2, publicClient });
+      const encodedData = encodeFunctionData({
+        abi: NFT_MINTER_ABI,
+        functionName: "claimEpochs",
+        args: [
+          toUInt2(args.nftId, "nftId", 0n),
+          toUInt2(args.numberOfEpochsToClaim, "numberOfEpochsToClaim", 0n)
+        ]
+      });
+      return _sendEvmContractCall({
+        client: client2,
+        publicClient,
+        to: nftMinterAddress,
+        encodedData,
+        senderAccount: args.account || client2.account,
+        operationName: "Claim NFT epochs"
+      });
+    },
+    /**
+     * Appeals a consensus transaction to trigger a new round of validation.
+     * The call is bound to the active decision on both Studio and contract
+     * networks. The schedule-extending entry point is safe for both pre-funded
+     * and unfunded appeals, while submitAppeal rejects an unfunded next round.
+     * When value is omitted, the authoritative appeal charge is used.
+     */
     appealTransaction: async (args) => {
       const { account: account2, txId } = args;
-      let { value } = args;
-      if (value === void 0) {
-        if (client2.chain.feeManagerContract?.address && client2.chain.roundsStorageContract?.address) {
-          const roundNumber = await publicClient.readContract({
-            address: client2.chain.roundsStorageContract.address,
-            abi: client2.chain.roundsStorageContract.abi,
-            functionName: "getRoundNumber",
-            args: [txId]
-          });
-          const transaction = await client2.getTransaction({ hash: txId });
-          const txStatus = Number(transaction.status);
-          value = await publicClient.readContract({
-            address: client2.chain.feeManagerContract.address,
-            abi: client2.chain.feeManagerContract.abi,
-            functionName: "calculateMinAppealBond",
-            args: [txId, roundNumber, txStatus]
-          });
-        } else {
-          value = 0n;
-        }
-      }
       const senderAccount = account2 || client2.account;
-      const encodedData = _encodeSubmitAppealData({ client: client2, txId });
+      const context = await _readAppealContext({
+        client: client2,
+        publicClient,
+        txId,
+        includeQuote: args.value === void 0
+      });
+      const value = args.value ?? context.requiredValue;
+      const encodedData = _encodeTopUpAndSubmitAppealData({
+        txId,
+        expectedDecisionId: context.decisionId,
+        // Consensus derives the appeal shape from live state and retains this
+        // normalized zero schedule only for ABI compatibility. The same call
+        // is therefore valid against both pre-funded and unfunded transactions.
+        distribution: {}
+      });
       await _sendConsensusCall({
         client: client2,
         publicClient,
@@ -36231,14 +37392,71 @@ var contractActions = (client2, publicClient) => {
       });
       return txId;
     },
+    /**
+     * Deposits additional fee budget for an existing consensus transaction.
+     * Returns the signed EVM envelope hash on every backend.
+     */
+    topUpFees: async (args) => {
+      const { account: account2, txId, distribution, value } = args;
+      const senderAccount = account2 || client2.account;
+      const encodedData = _encodeTopUpFeesData({ txId, distribution });
+      return _sendConsensusCall({
+        client: client2,
+        publicClient,
+        encodedData,
+        senderAccount,
+        value,
+        operationName: "Top up fees"
+      });
+    },
+    /**
+     * Deposits appeal fee budget and submits an appeal in the same consensus call.
+     * Returns the existing GenLayer transaction id, matching appealTransaction.
+     * The call is bound to the active decision on both Studio and contract
+     * networks. When value is omitted, the authoritative appeal charge is used.
+     */
+    topUpAndSubmitAppeal: async (args) => {
+      const { account: account2, txId, distribution } = args;
+      const senderAccount = account2 || client2.account;
+      const context = await _readAppealContext({
+        client: client2,
+        publicClient,
+        txId,
+        includeQuote: args.value === void 0
+      });
+      const value = args.value ?? context.requiredValue;
+      const encodedData = _encodeTopUpAndSubmitAppealData({
+        txId,
+        expectedDecisionId: context.decisionId,
+        distribution
+      });
+      await _sendConsensusCall({
+        client: client2,
+        publicClient,
+        encodedData,
+        senderAccount,
+        value,
+        operationName: "Top up and submit appeal"
+      });
+      return txId;
+    },
     /** Finalizes a single GenLayer transaction that is ready to be finalized. Returns the EVM transaction hash. */
     finalizeTransaction: async (args) => {
       const { account: account2, txId } = args;
       const senderAccount = account2 || client2.account;
+      const identity = await _readLifecycleIdentity({ client: client2, publicClient, txId });
+      if (!identity.decisionActive) {
+        throw new Error(`Transaction ${txId} has no active decision to finalize`);
+      }
+      if (identity.resolutionAction !== 6) {
+        throw new Error(
+          `Transaction ${txId} is not ready to finalize (resolution action ${identity.resolutionAction})`
+        );
+      }
       const encodedData = encodeFunctionData({
-        abi: client2.chain.consensusMainContract?.abi,
+        abi: CONSENSUS_FINALIZATION_TRAIN_ABI,
         functionName: "finalizeTransaction",
-        args: [txId]
+        args: [txId, identity.decisionId]
       });
       return _sendConsensusCall({
         client: client2,
@@ -36248,35 +37466,103 @@ var contractActions = (client2, publicClient) => {
         operationName: "Finalize"
       });
     },
-    /** Batch-finalizes idle GenLayer transactions (those stuck without progressing). Returns the EVM transaction hash. */
+    /**
+     * @deprecated The train separates attempt-bound resolution from
+     * decision-bound finalization. Use resolveTransactions or
+     * finalizeDecisions after classifying the lifecycle action.
+     */
     finalizeIdlenessTxs: async (args) => {
-      const { account: account2, txIds } = args;
-      if (txIds.length === 0) {
-        throw new Error("finalizeIdlenessTxs requires at least one txId.");
+      throw new Error(
+        `finalizeIdlenessTxs(${args.txIds.length} transaction(s)) is unavailable on the train: use resolveTransactions for attempt-bound lifecycle actions or finalizeDecisions for active decisions.`
+      );
+    },
+    /** Resolves a batch of attempt-bound lifecycle actions. */
+    resolveTransactions: async (args) => {
+      if (client2.chain.isStudio) {
+        throw _studioTrainBatchError("resolveTransactions");
       }
-      const senderAccount = account2 || client2.account;
+      if (args.txIds.length === 0) {
+        throw new Error("resolveTransactions requires at least one txId.");
+      }
+      const snapshot = await publicClient.getBlock();
+      const identities = await Promise.all(args.txIds.map(
+        (txId) => _readLifecycleIdentity({
+          client: client2,
+          publicClient,
+          txId,
+          blockNumber: snapshot.number,
+          blockTimestamp: snapshot.timestamp
+        })
+      ));
       const encodedData = encodeFunctionData({
-        abi: client2.chain.consensusMainContract?.abi,
-        functionName: "finalizeIdlenessTxs",
-        args: [txIds]
+        abi: CONSENSUS_FINALIZATION_TRAIN_ABI,
+        functionName: "resolveTransactions",
+        args: [args.txIds.map((txId, index2) => ({
+          txId,
+          expectedAttemptId: identities[index2].attemptId
+        }))]
       });
       return _sendConsensusCall({
         client: client2,
         publicClient,
         encodedData,
-        senderAccount,
-        operationName: "Finalize idleness"
+        senderAccount: args.account || client2.account,
+        operationName: "Resolve transactions"
+      });
+    },
+    /** Finalizes a batch of active, decision-bound transactions. */
+    finalizeDecisions: async (args) => {
+      if (client2.chain.isStudio) {
+        throw _studioTrainBatchError("finalizeDecisions");
+      }
+      if (args.txIds.length === 0) {
+        throw new Error("finalizeDecisions requires at least one txId.");
+      }
+      const snapshot = await publicClient.getBlock();
+      const identities = await Promise.all(args.txIds.map(
+        (txId) => _readLifecycleIdentity({
+          client: client2,
+          publicClient,
+          txId,
+          blockNumber: snapshot.number,
+          blockTimestamp: snapshot.timestamp
+        })
+      ));
+      identities.forEach((identity, index2) => {
+        if (!identity.decisionActive) {
+          throw new Error(`Transaction ${args.txIds[index2]} has no active decision to finalize`);
+        }
+        if (identity.resolutionAction !== 6) {
+          throw new Error(
+            `Transaction ${args.txIds[index2]} is not ready to finalize (resolution action ${identity.resolutionAction})`
+          );
+        }
+      });
+      const encodedData = encodeFunctionData({
+        abi: CONSENSUS_FINALIZATION_TRAIN_ABI,
+        functionName: "finalizeDecisions",
+        args: [args.txIds.map((txId, index2) => ({
+          txId,
+          expectedDecisionId: identities[index2].decisionId
+        }))]
+      });
+      return _sendConsensusCall({
+        client: client2,
+        publicClient,
+        encodedData,
+        senderAccount: args.account || client2.account,
+        operationName: "Finalize decisions"
       });
     }
   };
 };
-var validateAccount = (Account4) => {
-  if (!Account4) {
+var validateAccount = (Account5) => {
+  if (!Account5) {
     throw new Error(
       "No account set. Configure the client with an account or pass an account to this function."
     );
   }
-  return Account4;
+  return Account5;
 };
 var CREATED_TRANSACTION_EVENT_ABI = [
   {
@@ -36289,96 +37575,1058 @@ var CREATED_TRANSACTION_EVENT_ABI = [
     type: "event"
   }
 ];
-var ADD_TRANSACTION_ABI_V5 = [
+var FEES_DISTRIBUTION_COMPONENTS = [
+  { name: "leaderTimeunitsAllocation", type: "uint256" },
+  { name: "validatorTimeunitsAllocation", type: "uint256" },
+  { name: "appealRounds", type: "uint256" },
+  { name: "executionBudgetPerRound", type: "uint256" },
+  { name: "executionConsumed", type: "uint256" },
+  { name: "totalMessageFees", type: "uint256" },
+  { name: "rotations", type: "uint256[]" },
+  { name: "maxPriceGenPerTimeUnit", type: "uint256" },
+  { name: "storageFeeMaxGasPrice", type: "uint256" },
+  { name: "receiptFeeMaxGasPrice", type: "uint256" }
+];
+var MESSAGE_FEE_ALLOCATION_COMPONENTS = [
+  { name: "messageType", type: "uint8" },
+  { name: "onAcceptance", type: "bool" },
+  { name: "parentIndex", type: "uint256" },
+  { name: "recipient", type: "address" },
+  { name: "callKey", type: "bytes32" },
+  { name: "budget", type: "uint256" },
+  { name: "feeParams", type: "bytes" }
+];
+var ADD_TRANSACTION_PARAMS_COMPONENTS = [
+  { name: "sender", type: "address" },
+  { name: "recipient", type: "address" },
+  { name: "numOfInitialValidators", type: "uint256" },
+  { name: "maxRotations", type: "uint256" },
+  { name: "validUntil", type: "uint256" },
+  { name: "saltNonce", type: "uint256" },
+  { name: "userValue", type: "uint256" },
+  { name: "feesDistribution", type: "tuple", components: FEES_DISTRIBUTION_COMPONENTS },
+  { name: "txCalldata", type: "bytes" },
+  { name: "messageAllocations", type: "tuple[]", components: MESSAGE_FEE_ALLOCATION_COMPONENTS }
+];
+var ADD_TRANSACTION_ABI_WITH_FEES = [
   {
     type: "function",
     name: "addTransaction",
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     inputs: [
-      { name: "_sender", type: "address" },
-      { name: "_recipient", type: "address" },
-      { name: "_numOfInitialValidators", type: "uint256" },
-      { name: "_maxRotations", type: "uint256" },
-      { name: "_txData", type: "bytes" }
+      { name: "_params", type: "tuple", components: ADD_TRANSACTION_PARAMS_COMPONENTS }
     ],
     outputs: []
   }
 ];
-var ADD_TRANSACTION_ABI_V6 = [
+var CONSENSUS_FEE_MANAGEMENT_ABI = [
   {
     type: "function",
-    name: "addTransaction",
-    stateMutability: "nonpayable",
+    name: "topUpFees",
+    stateMutability: "payable",
     inputs: [
-      { name: "_sender", type: "address" },
-      { name: "_recipient", type: "address" },
-      { name: "_numOfInitialValidators", type: "uint256" },
-      { name: "_maxRotations", type: "uint256" },
-      { name: "_txData", type: "bytes" },
-      { name: "_validUntil", type: "uint256" }
+      { name: "_txId", type: "bytes32" },
+      { name: "_feesDistribution", type: "tuple", components: FEES_DISTRIBUTION_COMPONENTS }
+    ],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "topUpAndSubmitAppeal",
+    stateMutability: "payable",
+    inputs: [
+      { name: "_txId", type: "bytes32" },
+      { name: "_expectedDecisionId", type: "uint256" },
+      { name: "_feesDistribution", type: "tuple", components: FEES_DISTRIBUTION_COMPONENTS }
     ],
     outputs: []
   }
 ];
-var getAddTransactionInputCount = (abi2) => {
-  if (!abi2 || !Array.isArray(abi2)) {
-    return 0;
+var CONSENSUS_FINALIZATION_TRAIN_ABI = [
+  {
+    type: "function",
+    name: "finalizeTransaction",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_txId", type: "bytes32" },
+      { name: "_expectedDecisionId", type: "uint256" }
+    ],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "resolveTransactions",
+    stateMutability: "nonpayable",
+    inputs: [{
+      name: "_commands",
+      type: "tuple[]",
+      components: [
+        { name: "txId", type: "bytes32" },
+        { name: "expectedAttemptId", type: "bytes32" }
+      ]
+    }],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "finalizeDecisions",
+    stateMutability: "nonpayable",
+    inputs: [{
+      name: "_commands",
+      type: "tuple[]",
+      components: [
+        { name: "txId", type: "bytes32" },
+        { name: "expectedDecisionId", type: "uint256" }
+      ]
+    }],
+    outputs: []
   }
-  const addTransactionFunction = abi2.find((item) => {
+];
+var APPEALS_TRAIN_ABI = [
+  {
+    type: "function",
+    name: "canAppeal",
+    stateMutability: "view",
+    inputs: [
+      { name: "_txId", type: "bytes32" },
+      { name: "_expectedDecisionId", type: "uint256" }
+    ],
+    outputs: [{ name: "", type: "bool" }]
+  }
+];
+var FEE_MANAGER_CALCULATE_ROUND_FEES_ABI = [
+  {
+    type: "function",
+    name: "GENPerTimeUnit",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    type: "function",
+    name: "storageUnitPrice",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    type: "function",
+    name: "quoteGasPrice",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    type: "function",
+    name: "messageFeeParamsBudgetFloor",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    type: "function",
+    name: "calculateRoundFees",
+    stateMutability: "view",
+    inputs: [
+      { name: "_feesDistribution", type: "tuple", components: FEES_DISTRIBUTION_COMPONENTS },
+      { name: "_numOfValidators", type: "uint256" },
+      { name: "round", type: "uint256" }
+    ],
+    outputs: [{ name: "totalFeesToPay", type: "uint256" }]
+  }
+];
+var toUInt2 = (value, fieldName, fallback) => {
+  if (value === void 0) {
+    return fallback;
+  }
+  if (typeof value === "number" && !Number.isSafeInteger(value)) {
+    throw new Error(`${fieldName} must be a safe integer when provided as a number.`);
+  }
+  const normalized = BigInt(value);
+  if (normalized < 0n) {
+    throw new Error(`${fieldName} must be greater than or equal to zero.`);
+  }
+  return normalized;
+};
+var hasAbiFunction = (abi2, functionName) => {
+  if (!Array.isArray(abi2)) {
+    return false;
+  }
+  return abi2.some((item) => {
     if (!item || typeof item !== "object") {
       return false;
     }
     const candidate = item;
-    return candidate.type === "function" && candidate.name === "addTransaction";
+    return candidate.type === "function" && candidate.name === functionName;
   });
-  return Array.isArray(addTransactionFunction?.inputs) ? addTransactionFunction.inputs.length : 0;
+};
+var _resolveAddressManagerAddress = async ({
+  client: client2,
+  publicClient
+}) => {
+  const consensusMainContract = client2.chain.consensusMainContract;
+  if (!consensusMainContract?.address) {
+    throw new Error("NFTMinter address resolution not supported on this chain (missing consensusMainContract).");
+  }
+  const functionName = hasAbiFunction(consensusMainContract.abi, "getAddressManager") ? "getAddressManager" : hasAbiFunction(consensusMainContract.abi, "addressManager") ? "addressManager" : void 0;
+  if (!functionName) {
+    throw new Error("NFTMinter address resolution not supported on this chain (missing AddressManager getter).");
+  }
+  const addressManagerAddress = await publicClient.readContract({
+    address: consensusMainContract.address,
+    abi: consensusMainContract.abi,
+    functionName,
+    args: []
+  });
+  if (addressManagerAddress.toLowerCase() === zeroAddress) {
+    throw new Error("NFTMinter address resolution failed: AddressManager is zero.");
+  }
+  return addressManagerAddress;
+};
+var _resolveNftMinterAddress = async ({
+  client: client2,
+  publicClient
+}) => {
+  const addressManagerAddress = await _resolveAddressManagerAddress({ client: client2, publicClient });
+  const nftMinterAddress = await publicClient.readContract({
+    address: addressManagerAddress,
+    abi: ADDRESS_MANAGER_ABI,
+    functionName: "getAddressNonZero",
+    args: ["NFTMinter"]
+  });
+  if (nftMinterAddress.toLowerCase() === zeroAddress) {
+    throw new Error("NFTMinter address resolution failed: AddressManager returned zero.");
+  }
+  return nftMinterAddress;
+};
+var getDefaultValidUntil = () => BigInt(Math.floor(Date.now() / 1e3) + 3600);
+var requiresFeeDepositCalculation = (distribution) => distribution.leaderTimeunitsAllocation !== 0n || distribution.validatorTimeunitsAllocation !== 0n || distribution.executionBudgetPerRound !== 0n || distribution.totalMessageFees !== 0n;
+var DEFAULT_PRICE_CAP_HEADROOM_BPS = 12000n;
+var DEFAULT_LEADER_TIMEUNITS_ALLOCATION = 100n;
+var DEFAULT_VALIDATOR_TIMEUNITS_ALLOCATION = 200n;
+var DEFAULT_TRANSACTION_EXECUTION_BUDGET_PER_ROUND = 500000n;
+var DEFAULT_TRANSACTION_EXECUTION_GAS = 100000000n;
+var DEFAULT_RECEIPT_SLOTS_CHANGED = 7n;
+var DEFAULT_INTRINSIC_GAS = 21000n;
+var DEFAULT_BOOTLOADER_OVERHEAD = 60000n;
+var DEFAULT_GAS_PER_CHANGED_SLOT = 1000n;
+var DEFAULT_CALLDATA_GAS_PER_BYTE = 16n;
+var DEFAULT_FIXED_PROPOSE_RECEIPT_GAS = 210000n;
+var DEFAULT_FIXED_MESSAGE_REVEAL_GAS = 100000n;
+var DEFAULT_MIN_RECEIPT_BYTES = 512n;
+var DEFAULT_MESSAGE_REVEAL_LENGTH_SLOTS = 32n;
+var DEFAULT_NONDET_OUTPUT_LENGTH_BYTES = 32n;
+var TRANSACTION_GAS_HEADROOM_BPS = 20000n;
+var DEFAULT_PARENT_MESSAGE_RECEIPT_HEADROOM = 10000n;
+var VALIDATORS_PER_ROUND = [
+  5n,
+  7n,
+  11n,
+  13n,
+  23n,
+  25n,
+  47n,
+  49n,
+  95n,
+  97n,
+  191n,
+  193n,
+  383n,
+  385n,
+  767n,
+  769n,
+  1535n,
+  1537n
+];
+var withCapHeadroom = (value, headroomBps) => {
+  if (value === 0n) return 0n;
+  return (value * headroomBps + 9999n) / 10000n;
+};
+var withTransactionGasHeadroom = (value) => {
+  if (value === 0n) return 0n;
+  return (value * TRANSACTION_GAS_HEADROOM_BPS + 9999n) / 10000n;
+};
+var bigintFromUnknown = (value, fieldName, fallback = 0n) => {
+  if (value == null) return fallback;
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number" && Number.isSafeInteger(value)) return BigInt(value);
+  if (typeof value === "string" && value.trim() !== "") return BigInt(value);
+  throw new Error(`${fieldName} is not an integer value.`);
+};
+var extractStudioFeePolicy = (config) => {
+  const configRecord = config && typeof config === "object" && !Array.isArray(config) ? config : void 0;
+  const policy = configRecord?.policy;
+  const enabled = configRecord?.enabled;
+  if (enabled !== void 0 && typeof enabled !== "boolean") {
+    throw new Error(`sim_getFeeConfig enabled flag is not a boolean.`);
+  }
+  const policyRecord = policy && typeof policy === "object" && !Array.isArray(policy) ? policy : void 0;
+  if (!policyRecord) {
+    throw new Error(`sim_getFeeConfig did not expose a policy object.`);
+  }
+  const genPerTimeUnit = bigintFromUnknown(policyRecord.genPerTimeUnit, "policy.genPerTimeUnit");
+  const storageUnitPrice = bigintFromUnknown(policyRecord.storageUnitPrice, "policy.storageUnitPrice");
+  const receiptGasPrice = bigintFromUnknown(policyRecord.receiptGasPrice, "policy.receiptGasPrice");
+  const timeUnitOverlayBps = bigintFromUnknown(
+    policyRecord.timeUnitOverlayBps,
+    "policy.timeUnitOverlayBps"
+  );
+  const intrinsicGas = bigintFromUnknown(policyRecord.intrinsicGas, "policy.intrinsicGas", DEFAULT_INTRINSIC_GAS);
+  const bootloaderOverhead = bigintFromUnknown(
+    policyRecord.bootloaderOverhead,
+    "policy.bootloaderOverhead",
+    DEFAULT_BOOTLOADER_OVERHEAD
+  );
+  const gasPerChangedSlot = bigintFromUnknown(
+    policyRecord.gasPerChangedSlot,
+    "policy.gasPerChangedSlot",
+    DEFAULT_GAS_PER_CHANGED_SLOT
+  );
+  const calldataGasPerByte = bigintFromUnknown(
+    policyRecord.calldataGasPerByte,
+    "policy.calldataGasPerByte",
+    DEFAULT_CALLDATA_GAS_PER_BYTE
+  );
+  const fixedProposeReceiptGas = bigintFromUnknown(
+    policyRecord.fixedProposeReceiptGas,
+    "policy.fixedProposeReceiptGas",
+    DEFAULT_FIXED_PROPOSE_RECEIPT_GAS
+  );
+  const fixedMessageRevealGas = bigintFromUnknown(
+    policyRecord.fixedMessageRevealGas,
+    "policy.fixedMessageRevealGas",
+    DEFAULT_FIXED_MESSAGE_REVEAL_GAS
+  );
+  const executionBudgetFloor = policyRecord.messageFeeParamsBudgetFloor == null ? receiptGasPrice * (fixedProposeReceiptGas + intrinsicGas + bootloaderOverhead + DEFAULT_RECEIPT_SLOTS_CHANGED * gasPerChangedSlot + fixedMessageRevealGas + intrinsicGas + bootloaderOverhead + DEFAULT_MESSAGE_REVEAL_LENGTH_SLOTS * gasPerChangedSlot + DEFAULT_NONDET_OUTPUT_LENGTH_BYTES * calldataGasPerByte) : bigintFromUnknown(
+    policyRecord.messageFeeParamsBudgetFloor,
+    "policy.messageFeeParamsBudgetFloor"
+  );
+  return {
+    enabled: enabled ?? (genPerTimeUnit > 0n || storageUnitPrice > 0n || receiptGasPrice > 0n),
+    genPerTimeUnit,
+    storageUnitPrice,
+    receiptGasPrice,
+    executionBudgetFloor,
+    timeUnitOverlayBps
+  };
+};
+var readCurrentFeePolicy = async (client2, publicClient) => {
+  if (client2.chain.isStudio) {
+    const config = await client2.request({ method: "sim_getFeeConfig", params: [] });
+    return extractStudioFeePolicy(config);
+  }
+  if (!client2.chain.feeManagerContract?.address) {
+    throw new Error("Fee policy estimation is not supported on this chain (missing feeManagerContract).");
+  }
+  const address = client2.chain.feeManagerContract.address;
+  const abi2 = FEE_MANAGER_CALCULATE_ROUND_FEES_ABI;
+  const [genPerTimeUnit, storageUnitPrice, quotedReceiptGasPrice, executionBudgetFloor] = await Promise.all([
+    publicClient.readContract({ address, abi: abi2, functionName: "GENPerTimeUnit", args: [] }),
+    publicClient.readContract({ address, abi: abi2, functionName: "storageUnitPrice", args: [] }),
+    publicClient.readContract({ address, abi: abi2, functionName: "quoteGasPrice", args: [] }),
+    publicClient.readContract({ address, abi: abi2, functionName: "messageFeeParamsBudgetFloor", args: [] })
+  ]);
+  const enabled = genPerTimeUnit > 0n || storageUnitPrice > 0n || quotedReceiptGasPrice > 0n;
+  const networkReceiptGasPrice = enabled ? await publicClient.getGasPrice() : 0n;
+  const receiptGasPrice = maxBigint(quotedReceiptGasPrice, networkReceiptGasPrice);
+  if (enabled && receiptGasPrice === 0n) {
+    throw new Error("receipt gas price quoted as zero; refusing to build a zero price cap");
+  }
+  const localExecutionBudgetFloor = receiptGasPrice * (DEFAULT_FIXED_PROPOSE_RECEIPT_GAS + DEFAULT_INTRINSIC_GAS + DEFAULT_BOOTLOADER_OVERHEAD + DEFAULT_MIN_RECEIPT_BYTES * DEFAULT_CALLDATA_GAS_PER_BYTE + DEFAULT_RECEIPT_SLOTS_CHANGED * DEFAULT_GAS_PER_CHANGED_SLOT);
+  return {
+    enabled,
+    genPerTimeUnit,
+    storageUnitPrice,
+    receiptGasPrice,
+    executionBudgetFloor: maxBigint(executionBudgetFloor, localExecutionBudgetFloor),
+    // Live networks quote through FeeManager.calculateRoundFees; this field is
+    // only consumed by Studio's local mirror.
+    timeUnitOverlayBps: 0n
+  };
+};
+var maxBigint = (...values) => values.reduce(
+  (max, value) => value > max ? value : max,
+  0n
+);
+var defaultExecutionBudgetPerRound = (policy) => {
+  if (!policy.enabled || policy.storageUnitPrice === 0n && policy.receiptGasPrice === 0n) {
+    return 0n;
+  }
+  return maxBigint(
+    DEFAULT_TRANSACTION_EXECUTION_BUDGET_PER_ROUND,
+    policy.executionBudgetFloor,
+    policy.receiptGasPrice * DEFAULT_TRANSACTION_EXECUTION_GAS
+  );
+};
+var buildEstimatedFeesDistribution = (options, policy, defaultConsensusMaxRotations) => {
+  const headroomBps = toUInt2(
+    options?.priceCapHeadroomBps,
+    "priceCapHeadroomBps",
+    DEFAULT_PRICE_CAP_HEADROOM_BPS
+  );
+  const baseExecutionBudgetDefault = defaultExecutionBudgetPerRound(policy);
+  const messageAllocations = options?.messageAllocations ? normalizeMessageFeeAllocations(options.messageAllocations) : void 0;
+  const totalMessageFees = options?.totalMessageFees ?? (messageAllocations ? messageAllocations.reduce(
+    (sum, allocation) => {
+      if (allocation.messageType === 0 || allocation.parentIndex === MESSAGE_ALLOCATION_ROOT_PARENT_INDEX) {
+        return sum + allocation.budget;
+      }
+      return sum;
+    },
+    0n
+  ) : void 0);
+  const emitsMessages = (messageAllocations?.length ?? 0) > 0 || totalMessageFees !== void 0 && toUInt2(totalMessageFees, "totalMessageFees", 0n) > 0n;
+  const executionBudgetDefault = emitsMessages ? baseExecutionBudgetDefault + policy.receiptGasPrice * DEFAULT_PARENT_MESSAGE_RECEIPT_HEADROOM : baseExecutionBudgetDefault;
+  const appealRounds = toUInt2(options?.appealRounds, "appealRounds", 0n);
+  const rotationsCount = Number(appealRounds + 1n);
+  if (!Number.isSafeInteger(rotationsCount)) {
+    throw new Error("rotations appealRounds is too large.");
+  }
+  let rotations = options?.rotations;
+  if (rotations === void 0) {
+    const defaultRotationBudget = toUInt2(
+      defaultConsensusMaxRotations,
+      "defaultConsensusMaxRotations",
+      0n
+    );
+    rotations = Array.from({ length: rotationsCount }, () => defaultRotationBudget);
+  }
+  return createFeesDistribution({
+    leaderTimeunitsAllocation: options?.leaderTimeunitsAllocation ?? (policy.enabled ? DEFAULT_LEADER_TIMEUNITS_ALLOCATION : 0n),
+    validatorTimeunitsAllocation: options?.validatorTimeunitsAllocation ?? (policy.enabled ? DEFAULT_VALIDATOR_TIMEUNITS_ALLOCATION : 0n),
+    appealRounds,
+    executionBudgetPerRound: options?.executionBudgetPerRound ?? executionBudgetDefault,
+    executionConsumed: options?.executionConsumed,
+    totalMessageFees,
+    rotations,
+    maxPriceGenPerTimeUnit: options?.maxPriceGenPerTimeUnit ?? withCapHeadroom(policy.genPerTimeUnit, headroomBps),
+    storageFeeMaxGasPrice: options?.storageFeeMaxGasPrice ?? withCapHeadroom(policy.storageUnitPrice, headroomBps),
+    receiptFeeMaxGasPrice: options?.receiptFeeMaxGasPrice ?? withCapHeadroom(policy.receiptGasPrice, headroomBps)
+  });
+};
+var asRecord = (value) => value && typeof value === "object" && !Array.isArray(value) ? value : void 0;
+var feeAccountingFromSimulation = (simulation) => {
+  const direct = simulation.feeAccounting;
+  if (direct) return direct;
+  const receipt = asRecord(simulation.receipt);
+  const genvmResult = asRecord(receipt?.genvm_result);
+  const feeAccounting = asRecord(genvmResult?.fee_accounting);
+  return feeAccounting;
+};
+var messageAllocationsFromAccounting = (accounting) => {
+  if (!Array.isArray(accounting?.message_allocations) || accounting.message_allocations.length === 0) {
+    return void 0;
+  }
+  return accounting.message_allocations.map((raw, index2) => {
+    const allocation = asRecord(raw);
+    if (!allocation) {
+      throw new Error(`simulation.feeAccounting.message_allocations[${index2}] must be an object.`);
+    }
+    return {
+      messageType: Number(toUInt2(
+        allocation.messageType,
+        `simulation.feeAccounting.message_allocations[${index2}].messageType`,
+        0n
+      )),
+      onAcceptance: Boolean(allocation.onAcceptance),
+      parentIndex: toUInt2(
+        allocation.parentIndex,
+        `simulation.feeAccounting.message_allocations[${index2}].parentIndex`,
+        MESSAGE_ALLOCATION_ROOT_PARENT_INDEX
+      ),
+      recipient: String(allocation.recipient ?? zeroAddress),
+      callKey: prefixHex(String(allocation.callKey ?? CALL_KEY_WILDCARD)),
+      budget: toUInt2(
+        allocation.budget,
+        `simulation.feeAccounting.message_allocations[${index2}].budget`,
+        0n
+      ),
+      feeParams: prefixHex(String(allocation.feeParams ?? "0x"))
+    };
+  });
+};
+var observedSimulationFeeUsage = (args, policy) => {
+  const accounting = feeAccountingFromSimulation(args.simulation);
+  const report2 = args.simulation.feeReport ?? accounting?.execution_fee_report;
+  const executionHeadroomBps = toUInt2(
+    args.executionHeadroomBps,
+    "executionHeadroomBps",
+    DEFAULT_PRICE_CAP_HEADROOM_BPS
+  );
+  const messageHeadroomBps = toUInt2(
+    args.messageHeadroomBps,
+    "messageHeadroomBps",
+    DEFAULT_PRICE_CAP_HEADROOM_BPS
+  );
+  const executionFeeConsumed = bigintFromUnknown(
+    accounting?.execution_fee_consumed,
+    "simulation.feeAccounting.execution_fee_consumed"
+  );
+  const executionFeeReportTotal = bigintFromUnknown(
+    report2?.totalEstimatedFee,
+    "simulation.feeReport.totalEstimatedFee"
+  );
+  const observedExecutionBudget = executionFeeConsumed + executionFeeReportTotal;
+  const recommendedExecutionBudgetPerRound = observedExecutionBudget > 0n ? maxBigint(
+    policy.executionBudgetFloor,
+    withCapHeadroom(observedExecutionBudget, executionHeadroomBps)
+  ) : 0n;
+  const messageFeeConsumed = bigintFromUnknown(
+    accounting?.message_fee_consumed,
+    "simulation.feeAccounting.message_fee_consumed"
+  );
+  const genvmMessageFeeConsumed = bigintFromUnknown(
+    accounting?.genvm_message_fee_consumed,
+    "simulation.feeAccounting.genvm_message_fee_consumed"
+  );
+  const messageFeeBudget = bigintFromUnknown(
+    accounting?.message_fee_budget,
+    "simulation.feeAccounting.message_fee_budget"
+  );
+  const externalMessageReimbursed = bigintFromUnknown(
+    accounting?.external_message_fee_reimbursed,
+    "simulation.feeAccounting.external_message_fee_reimbursed"
+  );
+  const messageFeeRefunded = bigintFromUnknown(
+    accounting?.message_fee_refunded,
+    "simulation.feeAccounting.message_fee_refunded"
+  );
+  const externalMessageReserved = bigintFromUnknown(
+    accounting?.external_message_fee_reserved,
+    "simulation.feeAccounting.external_message_fee_reserved"
+  );
+  const externalMessageRemainder = bigintFromUnknown(
+    accounting?.external_message_fee_remainder,
+    "simulation.feeAccounting.external_message_fee_remainder"
+  );
+  const internalDeclaredBudget = (report2?.messageReveal?.messages ?? []).reduce(
+    (sum, message, index2) => message.messageType === "Internal" ? sum + bigintFromUnknown(
+      message.declaredBudget,
+      `simulation.feeReport.messageReveal.messages[${index2}].declaredBudget`
+    ) : sum,
+    0n
+  );
+  const observedMessageBudget = maxBigint(
+    messageFeeConsumed,
+    internalDeclaredBudget + externalMessageReimbursed
+  );
+  return {
+    executionFeeConsumed,
+    executionFeeReportTotal,
+    recommendedExecutionBudgetPerRound,
+    genvmMessageFeeConsumed,
+    messageFeeBudget,
+    messageFeeConsumed,
+    messageFeeRefunded,
+    internalDeclaredBudget,
+    externalMessageReserved,
+    externalMessageReimbursed,
+    externalMessageRemainder,
+    recommendedTotalMessageFees: observedMessageBudget > 0n ? withCapHeadroom(observedMessageBudget, messageHeadroomBps) : 0n
+  };
+};
+var transactionFeeEstimateFromStudioEstimate = (result, policy) => {
+  const estimate = asRecord(result);
+  const preset = asRecord(estimate?.recommendedPreset);
+  const distributionInput = asRecord(preset?.distribution);
+  if (!preset || !distributionInput || preset.feeValue === void 0) {
+    return void 0;
+  }
+  const rawAllocations = Array.isArray(preset.messageAllocations) ? preset.messageAllocations : void 0;
+  const feeAccounting = asRecord(estimate?.feeAccounting);
+  const feeReport = asRecord(estimate?.feeReport) ?? asRecord(feeAccounting?.execution_fee_report);
+  return {
+    distribution: createFeesDistribution(distributionInput),
+    messageAllocations: rawAllocations && rawAllocations.length > 0 ? normalizeMessageFeeAllocations(rawAllocations) : void 0,
+    feeValue: bigintFromUnknown(preset.feeValue, "recommendedPreset.feeValue"),
+    policy,
+    observed: observedSimulationFeeUsage(
+      {
+        simulation: {
+          feeAccounting,
+          feeReport
+        }
+      },
+      policy
+    )
+  };
+};
+var buildEstimatedFeesOptionsFromSimulation = (args, policy) => {
+  const {
+    simulation,
+    executionHeadroomBps,
+    messageHeadroomBps,
+    ...feeOptions
+  } = args;
+  const accounting = feeAccountingFromSimulation(args.simulation);
+  const observed = observedSimulationFeeUsage(args, policy);
+  const messageAllocations = feeOptions.messageAllocations ?? messageAllocationsFromAccounting(accounting);
+  return {
+    estimateOptions: {
+      ...feeOptions,
+      messageAllocations,
+      executionBudgetPerRound: feeOptions.executionBudgetPerRound ?? (observed.recommendedExecutionBudgetPerRound > 0n ? observed.recommendedExecutionBudgetPerRound : void 0),
+      totalMessageFees: feeOptions.totalMessageFees ?? (messageAllocations ? void 0 : observed.recommendedTotalMessageFees > 0n ? observed.recommendedTotalMessageFees : void 0)
+    },
+    observed,
+    messageAllocations
+  };
+};
+var validatorIndex = (numOfValidators) => {
+  const needle = BigInt(numOfValidators);
+  const index2 = VALIDATORS_PER_ROUND.findIndex((validators) => validators === needle);
+  if (index2 < 0) {
+    throw new Error(`InvalidNumOfValidators: ${numOfValidators}`);
+  }
+  return index2;
+};
+var calculateFeeForRound = (numOfValidators, rotations, leaderTimeunitsAllocation, validatorTimeunitsAllocation) => rotations * (leaderTimeunitsAllocation + numOfValidators * validatorTimeunitsAllocation);
+var validatorsPerRoundSafe = (round) => VALIDATORS_PER_ROUND[Math.min(Math.max(round, 0), VALIDATORS_PER_ROUND.length - 1)];
+var successfulAppealProfit = (appealBond) => appealBond + appealBond / 2n;
+var calculateLocalRoundFees = (distribution, numOfInitialValidators, policy) => {
+  if (distribution.appealRounds !== BigInt(distribution.rotations.length - 1)) {
+    throw new Error("InvalidAppealRounds");
+  }
+  if (distribution.maxPriceGenPerTimeUnit > 0n && policy.genPerTimeUnit > distribution.maxPriceGenPerTimeUnit) {
+    throw new Error("MaxPriceExceeded");
+  }
+  if (distribution.storageFeeMaxGasPrice > 0n && policy.storageUnitPrice > distribution.storageFeeMaxGasPrice) {
+    throw new Error("MaxPriceExceeded");
+  }
+  if (distribution.receiptFeeMaxGasPrice > 0n && policy.receiptGasPrice > distribution.receiptFeeMaxGasPrice) {
+    throw new Error("MaxPriceExceeded");
+  }
+  const startIndex = validatorIndex(numOfInitialValidators);
+  let taxableWork = calculateFeeForRound(
+    VALIDATORS_PER_ROUND[startIndex],
+    distribution.rotations[0] + 1n,
+    distribution.leaderTimeunitsAllocation,
+    distribution.validatorTimeunitsAllocation
+  );
+  let rotationsIndex = 1;
+  let rotationsThisRound = 1n;
+  for (let offset = 1; offset <= Number(distribution.appealRounds * 2n); offset++) {
+    if (offset % 2 === 0 && rotationsIndex < distribution.rotations.length) {
+      rotationsThisRound = distribution.rotations[rotationsIndex] + 1n;
+      rotationsIndex += 1;
+    } else if (offset % 2 === 1) {
+      rotationsThisRound = 1n;
+    }
+    taxableWork += calculateFeeForRound(
+      validatorsPerRoundSafe(offset),
+      rotationsThisRound,
+      distribution.leaderTimeunitsAllocation,
+      distribution.validatorTimeunitsAllocation
+    );
+  }
+  const priceCap = distribution.maxPriceGenPerTimeUnit;
+  if (priceCap > 0n) {
+    taxableWork *= priceCap;
+  }
+  let appealProfitReserve = 0n;
+  for (let appealOrdinal = 0; appealOrdinal < Number(distribution.appealRounds); appealOrdinal++) {
+    const nextNormalBond = calculateFeeForRound(
+      validatorsPerRoundSafe((appealOrdinal + 1) * 2),
+      distribution.rotations[appealOrdinal + 1] + 1n,
+      distribution.leaderTimeunitsAllocation,
+      distribution.validatorTimeunitsAllocation
+    ) * (priceCap > 0n ? priceCap : 1n);
+    appealProfitReserve += successfulAppealProfit(nextNormalBond);
+  }
+  const overlayBps = policy.timeUnitOverlayBps ?? 0n;
+  if (overlayBps < 0n || overlayBps >= 10000n) {
+    throw new Error("InvalidTimeUnitOverlayBps");
+  }
+  const overlay = overlayBps === 0n ? 0n : taxableWork * overlayBps / (10000n - overlayBps);
+  const leaderRounds = distribution.rotations.reduce(
+    (sum, rotations) => sum + rotations + 1n,
+    distribution.appealRounds
+  );
+  return taxableWork + appealProfitReserve + overlay + distribution.executionBudgetPerRound * leaderRounds;
+};
+var _resolveTransactionFees = async ({
+  client: client2,
+  publicClient,
+  fees: fees2,
+  numOfInitialValidators
+}) => {
+  const transactionFees = normalizeTransactionFees(fees2);
+  if (transactionFees.feeValue !== void 0 || !requiresFeeDepositCalculation(transactionFees.distribution)) {
+    return {
+      ...transactionFees,
+      feeValue: transactionFees.feeValue ?? 0n
+    };
+  }
+  if (!client2.chain.feeManagerContract?.address) {
+    if (client2.chain.isStudio) {
+      const policy = await readCurrentFeePolicy(client2, publicClient);
+      return {
+        ...transactionFees,
+        feeValue: policy.enabled ? calculateLocalRoundFees(
+          transactionFees.distribution,
+          numOfInitialValidators,
+          policy
+        ) + transactionFees.distribution.totalMessageFees : 0n
+      };
+    }
+    throw new Error("fees.feeValue is required when the chain does not expose a feeManagerContract.");
+  }
+  const roundFees = await publicClient.readContract({
+    address: client2.chain.feeManagerContract.address,
+    abi: FEE_MANAGER_CALCULATE_ROUND_FEES_ABI,
+    functionName: "calculateRoundFees",
+    args: [
+      transactionFees.distribution,
+      BigInt(numOfInitialValidators),
+      0n
+    ]
+  });
+  return {
+    ...transactionFees,
+    feeValue: roundFees + transactionFees.distribution.totalMessageFees
+  };
 };
 var _encodeAddTransactionData = ({
   client: client2,
   senderAccount,
   recipient,
   data,
-  consensusMaxRotations = client2.chain.defaultConsensusMaxRotations
+  consensusMaxRotations = client2.chain.defaultConsensusMaxRotations,
+  validUntil,
+  userValue = 0n,
+  transactionFees
 }) => {
   const validatedSenderAccount = validateAccount(senderAccount);
-  const addTransactionArgs = [
-    validatedSenderAccount.address,
-    recipient,
-    client2.chain.defaultNumberOfInitialValidators,
-    consensusMaxRotations,
-    data
-  ];
-  const encodedDataV5 = encodeFunctionData({
-    abi: ADD_TRANSACTION_ABI_V5,
-    functionName: "addTransaction",
-    args: addTransactionArgs
+  const txCalldata = data ?? "0x";
+  const txRecipient = recipient ?? zeroAddress;
+  const txValidUntil = toUInt2(validUntil, "validUntil", getDefaultValidUntil());
+  const feeValue = transactionFees.feeValue ?? 0n;
+  const params = {
+    sender: validatedSenderAccount.address,
+    recipient: txRecipient,
+    numOfInitialValidators: BigInt(client2.chain.defaultNumberOfInitialValidators),
+    maxRotations: BigInt(consensusMaxRotations),
+    validUntil: txValidUntil,
+    saltNonce: 0n,
+    userValue,
+    feesDistribution: transactionFees.distribution,
+    txCalldata,
+    messageAllocations: transactionFees.messageAllocations
+  };
+  return [{
+    encodedData: encodeFunctionData({
+      abi: ADD_TRANSACTION_ABI_WITH_FEES,
+      functionName: "addTransaction",
+      args: [params]
+    }),
+    value: userValue + feeValue
+  }];
+};
+var _studioTrainBatchError = (action) => new Error(
+  `${action} is not exposed by Studio's embedded consensus: use finalizeTransaction for an individual Studio transaction.`
+);
+var ROUND_PAGE_SIZE = 64n;
+var _unpackRoundValidatorPage = (value) => ({
+  validators: value.validators ?? value[0],
+  total: BigInt(value.total ?? value[1])
+});
+var _readRoundDataSnapshot = async ({
+  publicClient,
+  address,
+  txId,
+  round,
+  blockNumber
+}) => {
+  const read2 = (functionName, args) => publicClient.readContract({
+    address,
+    abi: ROUNDS_STORAGE_TRAIN_READ_ABI,
+    functionName,
+    args,
+    blockNumber
   });
-  const validUntil = BigInt(Math.floor(Date.now() / 1e3) + 3600);
-  const encodedDataV6 = encodeFunctionData({
-    abi: ADD_TRANSACTION_ABI_V6,
-    functionName: "addTransaction",
-    args: [...addTransactionArgs, validUntil]
-  });
-  if (getAddTransactionInputCount(client2.chain.consensusMainContract?.abi) >= 6) {
-    return {
-      primaryEncodedData: encodedDataV6,
-      fallbackEncodedData: encodedDataV5
-    };
+  const [
+    leaderIndex,
+    votesCommitted,
+    votesRevealed,
+    appealBond,
+    rotationsLeft,
+    result,
+    validatorVotes,
+    validatorVotesHash,
+    validatorResultHash,
+    firstPageRaw
+  ] = await Promise.all([
+    read2("getLeaderIndex", [txId, round]),
+    read2("getVotesCommitted", [txId, round]),
+    read2("getVotesRevealed", [txId, round]),
+    read2("getAppealBond", [txId, round]),
+    read2("getRotationsLeft", [txId, round]),
+    read2("getResult", [txId, round]),
+    read2("getValidatorVotes", [txId, round]),
+    read2("getValidatorVotesHash", [txId, round]),
+    read2("getValidatorResultHash", [txId, round]),
+    read2("getRoundValidatorsPage", [txId, round, 0n, ROUND_PAGE_SIZE])
+  ]);
+  const firstPage = _unpackRoundValidatorPage(firstPageRaw);
+  const offsets = [];
+  for (let offset = ROUND_PAGE_SIZE; offset < firstPage.total; offset += ROUND_PAGE_SIZE) {
+    offsets.push(offset);
+  }
+  const remainingPages = await Promise.all(
+    offsets.map((offset) => read2("getRoundValidatorsPage", [txId, round, offset, ROUND_PAGE_SIZE]))
+  );
+  const pages = [firstPage, ...remainingPages.map(_unpackRoundValidatorPage)];
+  if (pages.some((page) => page.total !== firstPage.total)) {
+    throw new Error("Round validator page total changed within a fixed block snapshot");
+  }
+  const roundValidators = pages.flatMap((page) => [...page.validators]);
+  const expected = Number(firstPage.total);
+  if (roundValidators.length !== expected) {
+    throw new Error(`Incomplete round validator pages: expected ${expected}, received ${roundValidators.length}`);
+  }
+  for (const [name, values] of [
+    ["validator votes", validatorVotes],
+    ["validator vote hashes", validatorVotesHash],
+    ["validator result hashes", validatorResultHash]
+  ]) {
+    if (values.length !== expected) {
+      throw new Error(`Incomplete ${name}: expected ${expected}, received ${values.length}`);
+    }
   }
   return {
-    primaryEncodedData: encodedDataV5,
-    fallbackEncodedData: encodedDataV6
+    round,
+    leaderIndex,
+    votesCommitted,
+    votesRevealed,
+    appealBond,
+    rotationsLeft,
+    result: Number(result),
+    roundValidators,
+    validatorVotes: [...validatorVotes].map(Number),
+    validatorVotesHash: [...validatorVotesHash],
+    validatorResultHash: [...validatorResultHash]
   };
 };
-var _encodeSubmitAppealData = ({
+var _readLifecycleIdentity = async ({
   client: client2,
-  txId
+  publicClient,
+  txId,
+  blockNumber,
+  blockTimestamp
+}) => {
+  if (client2.chain.isStudio) {
+    const lifecycle2 = await client2.request({
+      method: "gen_getTransactionLifecycle",
+      params: [{ txId }]
+    });
+    if (typeof lifecycle2.decisionActive !== "boolean") {
+      throw new Error(
+        `Studio returned an invalid decisionActive for ${txId}: ${String(lifecycle2.decisionActive)}`
+      );
+    }
+    const decisionId = lifecycle2.decisionActive ? BigInt(String(lifecycle2.decisionId)) : 0n;
+    const evaluatedAt = BigInt(String(lifecycle2.evaluatedAt ?? 0));
+    return {
+      blockNumber: 0n,
+      blockTimestamp: evaluatedAt,
+      resolutionAction: Number(lifecycle2.resolutionActionCode),
+      attemptId: `0x${"00".repeat(32)}`,
+      decisionActive: lifecycle2.decisionActive,
+      decisionId
+    };
+  }
+  const consensusDataAddress = client2.chain.consensusDataContract?.address;
+  if (!consensusDataAddress || consensusDataAddress === zeroAddress) {
+    throw new Error("ConsensusData contract is not configured for this chain");
+  }
+  let snapshotNumber = blockNumber;
+  let snapshotTimestamp = blockTimestamp;
+  if (snapshotNumber === void 0 || snapshotTimestamp === void 0) {
+    const snapshot = await publicClient.getBlock();
+    snapshotNumber = snapshot.number;
+    snapshotTimestamp = snapshot.timestamp;
+  }
+  const lifecycle = await publicClient.readContract({
+    address: consensusDataAddress,
+    abi: CONSENSUS_DATA_TRAIN_ABI,
+    functionName: "getTransactionLifecycle",
+    args: [txId, snapshotTimestamp],
+    blockNumber: snapshotNumber
+  });
+  const resolution = lifecycle.resolution ?? lifecycle[1];
+  const latestDecision = lifecycle.latestDecision ?? lifecycle[2];
+  const decisionActive = Boolean(lifecycle.decisionActive ?? lifecycle[3]);
+  return {
+    blockNumber: snapshotNumber,
+    blockTimestamp: snapshotTimestamp,
+    resolutionAction: Number(resolution.action ?? resolution[3]),
+    attemptId: resolution.attemptId ?? resolution[15],
+    decisionActive,
+    decisionId: decisionActive ? BigInt(latestDecision.decisionId ?? latestDecision[1]) : 0n
+  };
+};
+var _readAppealContext = async ({
+  client: client2,
+  publicClient,
+  txId,
+  includeQuote = true
+}) => {
+  const identity = await _readLifecycleIdentity({ client: client2, publicClient, txId });
+  if (!identity.decisionActive) {
+    throw new Error(`Transaction ${txId} has no active decision to appeal`);
+  }
+  if (!includeQuote) {
+    return { ...identity, requiredValue: 0n };
+  }
+  if (client2.chain.isStudio) {
+    const quote2 = await client2.request({
+      method: "gen_estimateLatestAppealCharge",
+      params: [{ txId }]
+    });
+    const quoteDecisionId2 = BigInt(String(quote2.decisionId));
+    if (quoteDecisionId2 !== identity.decisionId) {
+      throw new Error(
+        `Appeal decision changed while reading ${txId}: expected ${identity.decisionId}, received ${quoteDecisionId2}`
+      );
+    }
+    return {
+      ...identity,
+      requiredValue: BigInt(String(quote2.bond)) + BigInt(String(quote2.funding))
+    };
+  }
+  const consensusDataAddress = client2.chain.consensusDataContract.address;
+  const quote = await publicClient.readContract({
+    address: consensusDataAddress,
+    abi: CONSENSUS_DATA_TRAIN_ABI,
+    functionName: "estimateLatestAppealCharge",
+    args: [txId],
+    blockNumber: identity.blockNumber
+  });
+  const quoteDecisionId = BigInt(quote.decisionId ?? quote[0]);
+  if (quoteDecisionId !== identity.decisionId) {
+    throw new Error(
+      `Appeal decision changed while reading ${txId}: expected ${identity.decisionId}, received ${quoteDecisionId}`
+    );
+  }
+  const bond = BigInt(quote.bond ?? quote[1]);
+  const funding = BigInt(quote.funding ?? quote[2]);
+  return { ...identity, requiredValue: bond + funding };
+};
+var _encodeTopUpFeesData = ({
+  txId,
+  distribution
 }) => {
   return encodeFunctionData({
-    abi: client2.chain.consensusMainContract?.abi,
-    functionName: "submitAppeal",
-    args: [txId]
+    abi: CONSENSUS_FEE_MANAGEMENT_ABI,
+    functionName: "topUpFees",
+    args: [txId, createTopUpFeesDistribution(distribution)]
   });
+};
+var _encodeTopUpAndSubmitAppealData = ({
+  txId,
+  expectedDecisionId,
+  distribution
+}) => {
+  return encodeFunctionData({
+    abi: CONSENSUS_FEE_MANAGEMENT_ABI,
+    functionName: "topUpAndSubmitAppeal",
+    args: [txId, expectedDecisionId, createFeesDistribution(distribution)]
+  });
+};
+var _waitForSentEnvelope = async ({
+  client: client2,
+  publicClient,
+  evmHash,
+  operationName,
+  revertDetails
+}) => {
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: evmHash,
+    ...client2.chain.isStudio ? {
+      // Studio returns the envelope hash before its EVM transaction index is
+      // necessarily visible. viem's default six retries cover only ~12s and
+      // Studio reports that transient as ResourceNotFoundRpcError.
+      retryCount: 120,
+      retryDelay: 500
+    } : {}
+  });
+  if (receipt.status !== "reverted") return receipt;
+  let studioReason;
+  if (client2.chain.isStudio) {
+    try {
+      const rawReceipt = await client2.request({
+        method: "eth_getTransactionReceipt",
+        params: [evmHash]
+      });
+      const reason = rawReceipt?.revertReason ?? rawReceipt?.error;
+      if (typeof reason === "string" && reason.trim() !== "") {
+        studioReason = reason;
+      }
+    } catch {
+    }
+  }
+  const details = studioReason ?? revertDetails;
+  throw new Error(
+    `${operationName} reverted: EVM tx ${evmHash}${details ? `. ${details}` : ""}`
+  );
+};
+var _sendEvmContractCall = async ({
+  client: client2,
+  publicClient,
+  to,
+  encodedData,
+  senderAccount,
+  value = 0n,
+  operationName = "Contract call"
+}) => {
+  const validatedAccount = validateAccount(senderAccount);
+  const nonce = await client2.getCurrentNonce({ address: validatedAccount.address });
+  let estimatedGas;
+  try {
+    estimatedGas = await client2.estimateTransactionGas({
+      from: validatedAccount.address,
+      to,
+      data: encodedData,
+      value
+    });
+  } catch (err) {
+    console.error("Gas estimation failed, using default 200_000:", err);
+    estimatedGas = 200000n;
+  }
+  const gasPriceHex = await client2.request({ method: "eth_gasPrice" });
+  if (validatedAccount.type === "local") {
+    if (!validatedAccount.signTransaction) {
+      throw new Error("Local account does not support signTransaction.");
+    }
+    const txRequest = {
+      account: validatedAccount,
+      to,
+      data: encodedData,
+      value,
+      gas: estimatedGas,
+      gasPrice: BigInt(gasPriceHex),
+      nonce,
+      chainId: client2.chain.id
+    };
+    const serializedTransaction = await validatedAccount.signTransaction(txRequest);
+    const evmHash2 = await client2.sendRawTransaction({ serializedTransaction });
+    await _waitForSentEnvelope({ client: client2, publicClient, evmHash: evmHash2, operationName });
+    return evmHash2;
+  }
+  const evmHash = await client2.request({
+    method: "eth_sendTransaction",
+    params: [{
+      from: validatedAccount.address,
+      to,
+      data: encodedData,
+      value: value ? `0x${value.toString(16)}` : void 0,
+      gas: `0x${estimatedGas.toString(16)}`,
+      nonce: `0x${BigInt(nonce).toString(16)}`,
+      gasPrice: gasPriceHex
+    }]
+  });
+  await _waitForSentEnvelope({ client: client2, publicClient, evmHash, operationName });
+  return evmHash;
 };
 var _sendConsensusCall = async ({
   client: client2,
@@ -36421,10 +38669,7 @@ var _sendConsensusCall = async ({
     };
     const serializedTransaction = await validatedAccount.signTransaction(txRequest);
     const evmHash2 = await client2.sendRawTransaction({ serializedTransaction });
-    const receipt2 = await publicClient.waitForTransactionReceipt({ hash: evmHash2 });
-    if (receipt2.status === "reverted") {
-      throw new Error(`${operationName} reverted: EVM tx ${evmHash2}`);
-    }
+    await _waitForSentEnvelope({ client: client2, publicClient, evmHash: evmHash2, operationName });
     return evmHash2;
   }
   const evmHash = await client2.request({
@@ -36437,35 +38682,8 @@ var _sendConsensusCall = async ({
       gas: `0x${estimatedGas.toString(16)}`
     }]
   });
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: evmHash });
-  if (receipt.status === "reverted") {
-    throw new Error(`${operationName} reverted: EVM tx ${evmHash}`);
-  }
+  await _waitForSentEnvelope({ client: client2, publicClient, evmHash, operationName });
   return evmHash;
-};
-var isAddTransactionAbiMismatchError = (error) => {
-  const seen = /* @__PURE__ */ new WeakSet();
-  const serializedError = typeof error === "object" && error !== null ? JSON.stringify(error, (_key, value) => {
-    if (typeof value === "bigint") {
-      return value.toString();
-    }
-    if (typeof value === "object" && value !== null) {
-      if (seen.has(value)) {
-        return "[Circular]";
-      }
-      seen.add(value);
-    }
-    return value;
-  }) : "";
-  const errorObject = error;
-  const errorMessage = [
-    errorObject?.shortMessage,
-    errorObject?.details,
-    errorObject?.message,
-    serializedError,
-    String(error ?? "")
-  ].filter(Boolean).join(" ").toLowerCase();
-  return errorMessage.includes("invalid pointer in tuple") || errorMessage.includes("invalid pointer") || errorMessage.includes("could not decode") || errorMessage.includes("invalid arrayify value") || errorMessage.includes("types/value length mismatch");
 };
 var extractTxIdFromLogs = (client2, logs) => {
   const newTxEvents = parseEventLogs({
@@ -36489,26 +38707,64 @@ var extractTxIdFromLogs = (client2, logs) => {
 var _sendTransaction = async ({
   client: client2,
   publicClient,
-  encodedData,
-  fallbackEncodedData,
-  senderAccount,
-  value = 0n
+  transactionVariants,
+  senderAccount
 }) => {
   if (!client2.chain.consensusMainContract?.address) {
     throw new Error(`Consensus main contract address not found in chain config for "${client2.chain.name}".`);
   }
+  if (transactionVariants.length === 0) {
+    throw new Error("No transaction variants available to send.");
+  }
   const validatedSenderAccount = validateAccount(senderAccount);
   const nonce = await client2.getCurrentNonce({ address: validatedSenderAccount.address });
-  const sendWithEncodedData = async (encodedDataForSend) => {
+  const knownRevertSelectorNames = {
+    "0x8d53e553": "InsufficientFees",
+    "0xb4132db3": "MaxPriceExceeded",
+    "0x57df8523": "ExecutionBudgetExceeded",
+    "0x305e533c": "BudgetTooLow",
+    "0xa70732ee": "RollupBudgetBelowFloor",
+    "0x632be5a1": "FeeValueMustBeNonZero"
+  };
+  const stringifyRpcError = (error) => {
+    const parts = [];
+    if (error instanceof Error) {
+      parts.push(error.message);
+    }
+    const record2 = error && typeof error === "object" ? error : {};
+    for (const key of ["details", "shortMessage", "data"]) {
+      const value = record2[key];
+      if (typeof value === "string" && value.trim() !== "") {
+        parts.push(value);
+      }
+    }
+    const cause = record2.cause;
+    if (cause && typeof cause === "object") {
+      const causeRecord = cause;
+      for (const key of ["message", "data"]) {
+        const value = causeRecord[key];
+        if (typeof value === "string" && value.trim() !== "") {
+          parts.push(value);
+        }
+      }
+    }
+    const text = Array.from(new Set(parts)).join(" ");
+    const selectorName = Object.entries(knownRevertSelectorNames).find(([selector]) => text.includes(selector))?.[1];
+    return selectorName && !text.includes(selectorName) ? `${text} (${selectorName})` : text;
+  };
+  const sendWithEncodedData = async (transactionVariant) => {
     let estimatedGas;
+    let gasEstimationError;
     try {
       estimatedGas = await client2.estimateTransactionGas({
         from: validatedSenderAccount.address,
         to: client2.chain.consensusMainContract?.address,
-        data: encodedDataForSend,
-        value
+        data: transactionVariant.encodedData,
+        value: transactionVariant.value
       });
+      estimatedGas = withTransactionGasHeadroom(estimatedGas);
     } catch (err) {
+      gasEstimationError = stringifyRpcError(err);
       console.error("Gas estimation failed, using default 200_000:", err);
       estimatedGas = 200000n;
     }
@@ -36522,20 +38778,24 @@ var _sendTransaction = async ({
       const transactionRequest = {
         account: validatedSenderAccount,
         to: client2.chain.consensusMainContract?.address,
-        data: encodedDataForSend,
+        data: transactionVariant.encodedData,
         type: "legacy",
         nonce: Number(nonce),
-        value,
+        value: transactionVariant.value,
         gas: estimatedGas,
         gasPrice: BigInt(gasPriceHex2),
         chainId: client2.chain.id
       };
       const serializedTransaction = await validatedSenderAccount.signTransaction(transactionRequest);
       const txHash = await client2.sendRawTransaction({ serializedTransaction });
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-      if (receipt.status === "reverted") {
-        throw new Error(`Transaction reverted: EVM tx ${txHash} to consensus contract ${client2.chain.consensusMainContract?.address} was reverted.`);
-      }
+      const receipt = await _waitForSentEnvelope({
+        client: client2,
+        publicClient,
+        evmHash: txHash,
+        operationName: "Transaction",
+        revertDetails: gasEstimationError ? `Gas estimation error: ${gasEstimationError}` : void 0
+      });
+      if (client2.chain.isStudio) return txHash;
       const txId = extractTxIdFromLogs(client2, receipt.logs);
       if (!txId) {
         throw new Error(
@@ -36559,8 +38819,8 @@ var _sendTransaction = async ({
     const formattedRequest = {
       from: validatedSenderAccount.address,
       to: client2.chain.consensusMainContract?.address,
-      data: encodedDataForSend,
-      value: `0x${value.toString(16)}`,
+      data: transactionVariant.encodedData,
+      value: `0x${transactionVariant.value.toString(16)}`,
       gas: `0x${estimatedGas.toString(16)}`,
       nonce: `0x${nonceBigInt.toString(16)}`,
       type: "0x0",
@@ -36572,13 +38832,14 @@ var _sendTransaction = async ({
       method: "eth_sendTransaction",
       params: [formattedRequest]
     });
-    if (client2.chain.isStudio) {
-      return evmTxHash;
-    }
-    const externalReceipt = await publicClient.waitForTransactionReceipt({ hash: evmTxHash });
-    if (externalReceipt.status === "reverted") {
-      throw new Error(`Transaction reverted: EVM tx ${evmTxHash} to consensus contract ${client2.chain.consensusMainContract?.address} was reverted.`);
-    }
+    const externalReceipt = await _waitForSentEnvelope({
+      client: client2,
+      publicClient,
+      evmHash: evmTxHash,
+      operationName: "Transaction",
+      revertDetails: gasEstimationError ? `Gas estimation error: ${gasEstimationError}` : void 0
+    });
+    if (client2.chain.isStudio) return evmTxHash;
     const externalTxId = extractTxIdFromLogs(client2, externalReceipt.logs);
     if (!externalTxId) {
       throw new Error(
@@ -36587,14 +38848,10 @@ var _sendTransaction = async ({
     }
     return externalTxId;
   };
-  try {
-    return await sendWithEncodedData(encodedData);
-  } catch (error) {
-    if (!fallbackEncodedData || !isAddTransactionAbiMismatchError(error)) {
-      throw error;
-    }
-    return await sendWithEncodedData(fallbackEncodedData);
+  if (transactionVariants.length !== 1) {
+    throw new Error(`Train transaction encoding expected one variant, received ${transactionVariants.length}`);
   }
+  return sendWithEncodedData(transactionVariants[0]);
 };
 var transactionsConfig = {
   waitInterval: 3e3,
@@ -36684,15 +38941,15 @@ var decodeInputData = (rlpEncodedAppData, recipient) => {
   }
 };
 var decodeTransaction = (tx) => {
-  const txData = tx.txData ?? tx.txCalldata;
-  const numOfInitialValidators = tx.numOfInitialValidators ?? tx.initialRotations;
-  const txDataDecoded = decodeInputData(txData, tx.recipient);
+  const txDataDecoded = decodeInputData(tx.txCalldata, tx.recipient);
   const decodedTx = {
     ...tx,
-    txData,
+    // Preserve the public SDK field names while decoding one canonical train
+    // wire layout. Deployments with the old tuple must use the old SDK.
+    txData: tx.txCalldata,
     txDataDecoded,
-    currentTimestamp: tx.currentTimestamp.toString(),
-    numOfInitialValidators: numOfInitialValidators?.toString() ?? "0",
+    currentTimestamp: tx.observedAt.toString(),
+    numOfInitialValidators: tx.numOfInitialValidators.toString(),
     txSlot: tx.txSlot.toString(),
     createdTimestamp: tx.createdTimestamp.toString(),
     lastVoteTimestamp: tx.lastVoteTimestamp.toString(),
@@ -36705,6 +38962,7 @@ var decodeTransaction = (tx) => {
       proposalBlock: tx.readStateBlockRange?.proposalBlock?.toString() ?? "0"
     },
     statusName: transactionsStatusNumberToName[String(tx.status)],
+    lifecycle: transactionLifecycleFromStoredStatus(tx.status, tx.result),
     resultName: transactionResultNumberToName[String(tx.result)],
     txExecutionResult: tx.txExecutionResult !== void 0 ? Number(tx.txExecutionResult) : void 0,
     txExecutionResultName: tx.txExecutionResult !== void 0 ? executionResultNumberToName[String(tx.txExecutionResult)] : void 0,
@@ -36840,15 +39098,188 @@ var decodeLocalnetTransaction = (tx) => {
   }
   return tx;
 };
+var METHOD_NOT_FOUND_CODE = -32601;
+var METHOD_NOT_FOUND_MESSAGE = /method not found|does not exist|method not supported/i;
+var STUDIO_ACTIVATED_STATUS = "ACTIVATED";
+var isMethodNotFoundError = (error) => {
+  if (error instanceof MethodNotFoundRpcError) return true;
+  const seen = /* @__PURE__ */ new Set();
+  let current = error;
+  while (current && typeof current === "object" && !seen.has(current)) {
+    seen.add(current);
+    const { code, message } = current;
+    if (Number(code) === METHOD_NOT_FOUND_CODE) return true;
+    if (typeof message === "string" && METHOD_NOT_FOUND_MESSAGE.test(message)) return true;
+    current = current.cause;
+  }
+  return false;
+};
+var NO_OP_RESOLUTION_ACTION_CODE = 0;
+var UNSPECIFIED_RESOLUTION_SOURCE_CODE = 0;
+var storedStatusName = (transaction) => {
+  const raw = transaction.statusName ?? transaction.status;
+  const byCode = (code) => Object.prototype.hasOwnProperty.call(transactionsStatusNumberToName, code) ? transactionsStatusNumberToName[code] : void 0;
+  if (typeof raw === "number") return byCode(String(raw));
+  if (typeof raw !== "string") return void 0;
+  if (raw === STUDIO_ACTIVATED_STATUS) return "PENDING";
+  if (/^\d+$/.test(raw)) return byCode(raw);
+  return Object.prototype.hasOwnProperty.call(transactionsStatusNameToNumber, raw) ? raw : void 0;
+};
+var readStudioLifecycleFallback = async ({
+  client: client2,
+  hash: hash3,
+  timestamp,
+  cause
+}) => {
+  let transaction;
+  try {
+    transaction = await client2.getTransaction({ hash: hash3 });
+  } catch {
+    throw cause;
+  }
+  const status = storedStatusName(transaction);
+  if (!status) throw cause;
+  const storedStatusCode = Number(transactionsStatusNameToNumber[status]);
+  return {
+    storedStatusCode,
+    // The consumer surface cannot project a status forward in time.
+    projectedStatusCode: storedStatusCode,
+    resolutionActionCode: NO_OP_RESOLUTION_ACTION_CODE,
+    resolutionSourceCode: UNSPECIFIED_RESOLUTION_SOURCE_CODE,
+    decisionId: null,
+    decisionActive: false,
+    evaluatedAt: timestamp ?? Math.floor(Date.now() / 1e3)
+  };
+};
+var TRANSACTION_PAGE_SIZE = 64n;
+var protocolInteger = (value, label) => {
+  if (value === null || value === void 0 || value === "") {
+    throw new Error(`Missing protocol lifecycle ${label}`);
+  }
+  const numeric = Number(value);
+  if (!Number.isSafeInteger(numeric) || numeric < 0) {
+    throw new Error(`Invalid protocol lifecycle ${label}: ${String(value)}`);
+  }
+  return numeric;
+};
+var protocolName = (names, code, label) => {
+  const name = names[String(code)];
+  if (!name) throw new Error(`Unknown protocol lifecycle ${label}: ${code}`);
+  return name;
+};
+var protocolDecisionId = (value, active) => {
+  if (!active) return null;
+  if (typeof value === "number" && !Number.isSafeInteger(value)) {
+    throw new Error(`Invalid protocol lifecycle decisionId: ${String(value)}`);
+  }
+  const decimal = String(value);
+  if (!/^\d+$/.test(decimal)) {
+    throw new Error(`Invalid protocol lifecycle decisionId: ${decimal}`);
+  }
+  return BigInt(decimal).toString();
+};
+var normalizeProtocolLifecycle = (raw) => {
+  const storedStatusCode = protocolInteger(raw.storedStatusCode, "storedStatusCode");
+  const projectedStatusCode = protocolInteger(raw.projectedStatusCode, "projectedStatusCode");
+  const resolutionActionCode = protocolInteger(raw.resolutionActionCode, "resolutionActionCode");
+  const resolutionSourceCode = protocolInteger(raw.resolutionSourceCode, "resolutionSourceCode");
+  if (typeof raw.decisionActive !== "boolean") {
+    throw new Error(`Invalid protocol lifecycle decisionActive: ${String(raw.decisionActive)}`);
+  }
+  return {
+    storedStatus: protocolName(transactionProtocolStatusNumberToName, storedStatusCode, "storedStatusCode"),
+    storedStatusCode,
+    projectedStatus: protocolName(
+      transactionProtocolStatusNumberToName,
+      projectedStatusCode,
+      "projectedStatusCode"
+    ),
+    projectedStatusCode,
+    resolutionAction: protocolName(
+      transactionResolutionActionNumberToName,
+      resolutionActionCode,
+      "resolutionActionCode"
+    ),
+    resolutionActionCode,
+    resolutionSource: protocolName(
+      transactionResolutionSourceNumberToName,
+      resolutionSourceCode,
+      "resolutionSourceCode"
+    ),
+    resolutionSourceCode,
+    decisionId: protocolDecisionId(raw.decisionId, raw.decisionActive),
+    decisionActive: raw.decisionActive,
+    evaluatedAt: protocolInteger(raw.evaluatedAt, "evaluatedAt")
+  };
+};
+var resolvedAddress = (name, address) => {
+  if (address === zeroAddress) {
+    throw new Error(`${name} is not registered in AddressManager`);
+  }
+  return address;
+};
+var unpackAddressPage = (result) => "page" in result ? result : { page: result[0], total: result[1] };
+var readAddressPages = async (total, readPage) => {
+  const offsets = [];
+  for (let offset = 0n; offset < total; offset += TRANSACTION_PAGE_SIZE) offsets.push(offset);
+  const pages = (await Promise.all(offsets.map(readPage))).map(unpackAddressPage);
+  if (pages.some((page) => page.total !== total)) {
+    throw new Error("Address page total changed within a fixed block snapshot");
+  }
+  const items = pages.flatMap(({ page }) => [...page]);
+  if (BigInt(items.length) !== total) {
+    throw new Error(`Incomplete address pages: expected ${total}, received ${items.length}`);
+  }
+  return items;
+};
+var didWarnWaitForTransactionReceiptStatus = false;
+var warnDeprecatedReceiptStatus = () => {
+  if (didWarnWaitForTransactionReceiptStatus) return;
+  didWarnWaitForTransactionReceiptStatus = true;
+  console.warn("waitForTransactionReceipt({ status }) is deprecated; use waitUntil: 'decided' or waitUntil: 'finalized' instead.");
+};
+var resolveWaitTarget = (status, waitUntil) => {
+  if (waitUntil) {
+    return { waitUntil, label: waitUntil };
+  }
+  if (!status) {
+    return { waitUntil: "decided", label: "decided" };
+  }
+  warnDeprecatedReceiptStatus();
+  if (status === "ACCEPTED") {
+    return { waitUntil: "decided", label: "decided" };
+  }
+  if (status === "FINALIZED") {
+    return { waitUntil: "finalized", label: "finalized" };
+  }
+  return { legacyStatus: status, label: status };
+};
+var hasReachedWaitTarget = (transaction, target) => {
+  const storedStatusName2 = transaction.statusName ?? (typeof transaction.status === "number" || /^\d+$/.test(String(transaction.status)) ? transactionsStatusNumberToName[String(transaction.status)] : transaction.status);
+  const transactionStatusString = storedStatusName2 ? transactionsStatusNameToNumber[storedStatusName2] : String(transaction.status);
+  if (target.waitUntil === "decided") {
+    return isDecidedState(transactionStatusString);
+  }
+  if (target.waitUntil === "finalized") {
+    return transactionStatusString === transactionsStatusNameToNumber[
+      "FINALIZED"
+      /* FINALIZED */
+    ];
+  }
+  if (!target.legacyStatus) return false;
+  return transactionStatusString === transactionsStatusNameToNumber[target.legacyStatus];
+};
 var receiptActions = (client2, publicClient) => ({
   /** Polls until a transaction reaches the specified status. Returns the transaction receipt. */
   waitForTransactionReceipt: async ({
     hash: hash3,
-    status = "ACCEPTED",
+    status,
+    waitUntil,
     interval = transactionsConfig.waitInterval,
     retries = transactionsConfig.retries,
     fullTransaction = false
   }) => {
+    const target = resolveWaitTarget(status, waitUntil);
     const transaction = await client2.getTransaction({
       hash: hash3
     });
@@ -36856,8 +39287,7 @@ var receiptActions = (client2, publicClient) => ({
       throw new Error(`Transaction not found: ${hash3}`);
     }
     const transactionStatusString = String(transaction.status);
-    const requestedStatus = transactionsStatusNameToNumber[status];
-    if (transactionStatusString === requestedStatus || status === "ACCEPTED" && isDecidedState(transactionStatusString)) {
+    if (hasReachedWaitTarget(transaction, target)) {
       let finalTransaction = transaction;
       if (client2.chain.isStudio) {
         finalTransaction = decodeLocalnetTransaction(transaction);
@@ -36868,49 +39298,229 @@ var receiptActions = (client2, publicClient) => ({
       return finalTransaction;
     }
     if (retries === 0) {
-      throw new Error(`Timed out waiting for transaction ${hash3} to reach status "${status}" (current status: ${transactionStatusString}).`);
+      throw new Error(`Timed out waiting for transaction ${hash3} to reach "${target.label}" (current status: ${transactionStatusString}).`);
     }
     await sleep(interval);
     return receiptActions(client2, publicClient).waitForTransactionReceipt({
       hash: hash3,
-      status,
+      waitUntil: target.waitUntil,
+      status: target.legacyStatus,
       interval,
       retries: retries - 1,
       fullTransaction
     });
-  }
+  },
+  /** Polls until the stored transaction state contains a materialized decision. */
+  waitForDecision: async ({
+    hash: hash3,
+    interval,
+    retries,
+    fullTransaction
+  }) => receiptActions(client2, publicClient).waitForTransactionReceipt({
+    hash: hash3,
+    waitUntil: "decided",
+    interval,
+    retries,
+    fullTransaction
+  }),
+  /** Polls until the stored transaction state is finalized. */
+  waitForFinalization: async ({
+    hash: hash3,
+    interval,
+    retries,
+    fullTransaction
+  }) => receiptActions(client2, publicClient).waitForTransactionReceipt({
+    hash: hash3,
+    waitUntil: "finalized",
+    interval,
+    retries,
+    fullTransaction
+  })
 });
 var transactionActions = (client2, publicClient) => ({
-  /** Fetches transaction data including status, execution result, and consensus details. */
+  advanced: {
+    /**
+     * `advanced.getTransactionLifecycle` exposes stored/projected status,
+     * resolution action/source, and active decision identity. Contract networks
+     * use one fixed-block lifecycle read. `Finalize` is an action, not a status
+     * or separate readiness field.
+     *
+     * A Studio deployment that does not yet serve `gen_getTransactionLifecycle`
+     * degrades to the stored status its consumer surface does prove, rather
+     * than failing the whole read.
+     */
+    getTransactionLifecycle: async ({
+      hash: hash3,
+      timestamp
+    }) => {
+      if (client2.chain.isStudio) {
+        let raw;
+        try {
+          raw = await client2.request({
+            method: "gen_getTransactionLifecycle",
+            params: [{ txId: hash3, ...timestamp === void 0 ? {} : {
+              timestamp: protocolInteger(timestamp, "timestamp")
+            } }]
+          });
+        } catch (error) {
+          if (!isMethodNotFoundError(error)) throw error;
+          raw = await readStudioLifecycleFallback({ client: client2, hash: hash3, timestamp, cause: error });
+        }
+        return normalizeProtocolLifecycle(raw);
+      }
+      const consensusDataAddress = client2.chain.consensusDataContract?.address;
+      if (!consensusDataAddress || consensusDataAddress === zeroAddress) {
+        throw new Error("ConsensusData contract is not configured for this chain");
+      }
+      const snapshot = await publicClient.getBlock();
+      const blockNumber = snapshot.number;
+      const evaluatedAt = timestamp === void 0 ? protocolInteger(snapshot.timestamp, "block timestamp") : protocolInteger(timestamp, "timestamp");
+      const lifecycle = await publicClient.readContract({
+        address: consensusDataAddress,
+        abi: CONSENSUS_DATA_TRAIN_ABI,
+        functionName: "getTransactionLifecycle",
+        args: [hash3, BigInt(evaluatedAt)],
+        blockNumber
+      });
+      return normalizeProtocolLifecycle({
+        storedStatusCode: lifecycle.storedStatus,
+        projectedStatusCode: lifecycle.resolution.projectedStatus,
+        resolutionActionCode: lifecycle.resolution.action,
+        resolutionSourceCode: lifecycle.resolution.source,
+        decisionId: lifecycle.latestDecision.decisionId,
+        decisionActive: lifecycle.decisionActive,
+        evaluatedAt: lifecycle.resolution.evaluatedAt
+      });
+    }
+  },
+  /**
+   * Fetches a transaction with a simple stored lifecycle and split round data.
+   * Use advanced.getTransactionLifecycle for protocol projection/action details.
+   */
   getTransaction: async ({ hash: hash3 }) => {
     if (client2.chain.isStudio) {
       const transaction2 = await client2.getTransaction({ hash: hash3 });
       const localnetStatus = transaction2.status === "ACTIVATED" ? "PENDING" : transaction2.status;
       transaction2.status = Number(transactionsStatusNameToNumber[localnetStatus]);
       transaction2.statusName = localnetStatus;
+      transaction2.lifecycle = transactionLifecycleFromStoredStatus(
+        localnetStatus,
+        transaction2.result
+      );
       return decodeLocalnetTransaction(transaction2);
     }
-    const contractAddress = client2.chain.consensusDataContract?.address;
-    const contractAbi = client2.chain.consensusDataContract?.abi;
-    const [txDataRaw, allDataRaw] = await Promise.all([
+    const consensusDataAddress = client2.chain.consensusDataContract?.address;
+    if (!consensusDataAddress || consensusDataAddress === zeroAddress) {
+      throw new Error("ConsensusData contract is not configured for this chain");
+    }
+    const snapshot = await publicClient.getBlock();
+    const blockNumber = snapshot.number;
+    const addressManagerAddress = resolvedAddress(
+      "AddressManager",
+      await publicClient.readContract({
+        address: consensusDataAddress,
+        abi: CONSENSUS_DATA_TRAIN_ABI,
+        functionName: "addressManager",
+        blockNumber
+      })
+    );
+    const [bigRoundsAddressRaw, roundsStorageAddressRaw, transactionManagerAddressRaw] = await Promise.all([
       publicClient.readContract({
-        address: contractAddress,
-        abi: contractAbi,
-        functionName: "getTransactionData",
-        args: [hash3, Math.round((/* @__PURE__ */ new Date()).getTime() / 1e3)]
+        address: addressManagerAddress,
+        abi: ADDRESS_MANAGER_TRAIN_ABI,
+        functionName: "getAddress",
+        args: ["ConsensusDataBigRounds"],
+        blockNumber
       }),
       publicClient.readContract({
-        address: contractAddress,
-        abi: contractAbi,
-        functionName: "getTransactionAllData",
-        args: [hash3]
+        address: addressManagerAddress,
+        abi: ADDRESS_MANAGER_TRAIN_ABI,
+        functionName: "getAddress",
+        args: ["RoundsStorage"],
+        blockNumber
+      }),
+      publicClient.readContract({
+        address: addressManagerAddress,
+        abi: ADDRESS_MANAGER_TRAIN_ABI,
+        functionName: "getAddress",
+        args: ["TransactionManager"],
+        blockNumber
       })
     ]);
-    const txData = txDataRaw;
-    const [txAllData, _roundsData] = allDataRaw;
+    const bigRoundsAddress = resolvedAddress("ConsensusDataBigRounds", bigRoundsAddressRaw);
+    const roundsStorageAddress = resolvedAddress("RoundsStorage", roundsStorageAddressRaw);
+    const transactionManagerAddress = resolvedAddress("TransactionManager", transactionManagerAddressRaw);
+    const txData = await publicClient.readContract({
+      address: bigRoundsAddress,
+      abi: CONSENSUS_DATA_BIG_ROUNDS_TRAIN_ABI,
+      functionName: "getStoredTransactionDataLight",
+      args: [hash3],
+      blockNumber
+    });
+    const round = txData.lastRound.round;
+    const [roundValidators, consumedValidators, validatorVotes, validatorVotesHash, validatorResultHash, txExecutionResult, numOfInitialValidators] = await Promise.all([
+      readAddressPages(txData.lastRound.validatorsCount, (offset) => publicClient.readContract({
+        address: bigRoundsAddress,
+        abi: CONSENSUS_DATA_BIG_ROUNDS_TRAIN_ABI,
+        functionName: "getRoundValidatorsPaged",
+        args: [hash3, round, offset, TRANSACTION_PAGE_SIZE],
+        blockNumber
+      })),
+      readAddressPages(txData.consumedValidatorsCount, (offset) => publicClient.readContract({
+        address: bigRoundsAddress,
+        abi: CONSENSUS_DATA_BIG_ROUNDS_TRAIN_ABI,
+        functionName: "getConsumedValidatorsPaged",
+        args: [hash3, offset, TRANSACTION_PAGE_SIZE],
+        blockNumber
+      })),
+      publicClient.readContract({
+        address: roundsStorageAddress,
+        abi: ROUNDS_STORAGE_TRAIN_READ_ABI,
+        functionName: "getValidatorVotes",
+        args: [hash3, round],
+        blockNumber
+      }),
+      publicClient.readContract({
+        address: roundsStorageAddress,
+        abi: ROUNDS_STORAGE_TRAIN_READ_ABI,
+        functionName: "getValidatorVotesHash",
+        args: [hash3, round],
+        blockNumber
+      }),
+      publicClient.readContract({
+        address: roundsStorageAddress,
+        abi: ROUNDS_STORAGE_TRAIN_READ_ABI,
+        functionName: "getValidatorResultHash",
+        args: [hash3, round],
+        blockNumber
+      }),
+      publicClient.readContract({
+        address: transactionManagerAddress,
+        abi: TRANSACTION_MANAGER_TRAIN_READ_ABI,
+        functionName: "getTxExecutionResult",
+        args: [hash3],
+        blockNumber
+      }),
+      publicClient.readContract({
+        address: transactionManagerAddress,
+        abi: TRANSACTION_MANAGER_TRAIN_READ_ABI,
+        functionName: "getNumOfInitialValidators",
+        args: [hash3],
+        blockNumber
+      })
+    ]);
     const transaction = {
       ...txData,
-      txExecutionResult: Number(txAllData.txExecutionResult)
+      numOfInitialValidators,
+      txExecutionResult: Number(txExecutionResult),
+      consumedValidators,
+      lastRound: {
+        ...txData.lastRound,
+        roundValidators,
+        validatorVotes: [...validatorVotes].map(Number),
+        validatorVotesHash: [...validatorVotesHash],
+        validatorResultHash: [...validatorResultHash]
+      }
     };
     return decodeTransaction(transaction);
   },
@@ -36923,19 +39533,35 @@ var transactionActions = (client2, publicClient) => ({
     const tx = await transactionActions(client2, publicClient).getTransaction({ hash: hash3 });
     const proposalBlock = BigInt(tx.readStateBlockRange?.proposalBlock ?? "0");
     if (proposalBlock === BigInt(0)) return [];
-    const scanRange = BigInt(100);
+    const scanRange = BigInt(1e4);
     const latestBlock = await publicClient.getBlockNumber();
     const toBlock = proposalBlock + scanRange < latestBlock ? proposalBlock + scanRange : latestBlock;
     const consensusAddress = client2.chain.consensusMainContract?.address;
     const internalMessageProcessedTopic = keccak256(stringToBytes("InternalMessageProcessed(bytes32,address,address)"));
-    const logs = await publicClient.getLogs({
+    const transactionAcceptedTopic = keccak256(stringToBytes("TransactionAccepted(bytes32)"));
+    const transactionFinalizedTopic = keccak256(stringToBytes("TransactionFinalized(bytes32)"));
+    const decisionLogs = await publicClient.getLogs({
       address: consensusAddress,
       event: void 0,
       fromBlock: proposalBlock,
       toBlock,
-      topics: [internalMessageProcessedTopic, hash3]
+      topics: [[transactionAcceptedTopic, transactionFinalizedTopic], hash3]
     });
-    return logs.map((log) => log.topics[1]).filter(Boolean);
+    const decisionTransactionHashes = [
+      ...new Set(decisionLogs.map((log) => log.transactionHash).filter(Boolean))
+    ];
+    const receipts = await Promise.all(
+      decisionTransactionHashes.map(
+        (transactionHash) => publicClient.getTransactionReceipt({ hash: transactionHash })
+      )
+    );
+    return [
+      ...new Set(
+        receipts.flatMap(
+          (receipt) => receipt.logs.filter((log) => log.topics[0] === internalMessageProcessedTopic).map((log) => log.topics[1]).filter(Boolean)
+        )
+      )
+    ];
   },
   /** Fetches the full execution trace including return data, stdout, stderr, and GenVM logs. */
   debugTraceTransaction: async ({ hash: hash3, round = 0 }) => {
@@ -37021,6 +39647,7 @@ var snapID = {
 var networks = {
   localnet,
   studionet,
+  studioDevnet,
   testnetAsimov,
   testnetBradbury
 };
@@ -37124,8 +39751,56 @@ function parseStakingAmount(amount) {
 function formatStakingAmount(amount) {
   return `${formatEther2(amount)} GEN`;
 }
+var OPERATOR_REGISTRATION_DOMAIN = keccak256(
+  stringToHex("GenLayer/operatorPubKey/proof-of-possession/v1")
+);
+function operatorAddressFromPublicKey(operatorPubKey) {
+  const publicKey = concatHex([
+    "0x04",
+    toHex(operatorPubKey[0], { size: 32 }),
+    toHex(operatorPubKey[1], { size: 32 })
+  ]);
+  return getAddress(publicKeyToAddress(publicKey));
+}
+function operatorPossessionMessage(operatorPubKey, context) {
+  return keccak256(
+    encodeAbiParameters(
+      [
+        { type: "bytes32" },
+        { type: "uint256" },
+        { type: "address" },
+        { type: "address" },
+        { type: "uint256" },
+        { type: "uint256" }
+      ],
+      [
+        OPERATOR_REGISTRATION_DOMAIN,
+        context.chainId,
+        context.registrar,
+        context.owner,
+        operatorPubKey[0],
+        operatorPubKey[1]
+      ]
+    )
+  );
+}
+async function verifyOperatorRegistration(registration, context) {
+  try {
+    const operator = operatorAddressFromPublicKey(registration.operatorPubKey);
+    if (operator !== getAddress(registration.operator)) return false;
+    const recovered = await recoverMessageAddress({
+      message: { raw: operatorPossessionMessage(registration.operatorPubKey, context) },
+      signature: registration.possessionProof
+    });
+    return getAddress(recovered) === operator;
+  } catch {
+    return false;
+  }
+}
+var VALIDATORS_JOINED_PAGE_SIZE = 64n;
 var FALLBACK_GAS = 1000000n;
 var GAS_BUFFER_MULTIPLIER = 2n;
+var VALIDATOR_WALLET_FACTORY_KEY = "ValidatorWalletFactory";
 var COMBINED_ERROR_ABI = [...STAKING_ABI, ...VALIDATOR_WALLET_ABI];
 function extractRevertReason(err) {
   if (err instanceof BaseError2) {
@@ -37202,23 +39877,46 @@ var stakingActions = (client2, publicClient) => {
         gasLimit = FALLBACK_GAS;
       }
     }
-    const nonce = await publicClient.getTransactionCount({ address: account2.address });
-    const txRequest = await publicClient.prepareTransactionRequest({
-      account: account2,
-      to: options.to,
-      data: options.data,
-      value: options.value,
-      type: "legacy",
-      nonce,
-      gas: gasLimit,
-      chain: client2.chain
-    });
-    const signTransaction2 = account2.signTransaction;
-    if (!signTransaction2) {
-      throw new Error("Account does not support signing transactions");
+    let hash3;
+    if (account2.type === "local") {
+      const nonce = await publicClient.getTransactionCount({ address: account2.address });
+      const txRequest = await publicClient.prepareTransactionRequest({
+        account: account2,
+        to: options.to,
+        data: options.data,
+        value: options.value,
+        type: "legacy",
+        nonce,
+        gas: gasLimit,
+        chain: client2.chain
+      });
+      const signTransaction2 = account2.signTransaction;
+      if (!signTransaction2) {
+        throw new Error("Account does not support signing transactions");
+      }
+      const serializedTx = await signTransaction2(txRequest);
+      hash3 = await publicClient.sendRawTransaction({ serializedTransaction: serializedTx });
+    } else {
+      let gasPrice;
+      try {
+        gasPrice = await client2.request({ method: "eth_gasPrice" });
+      } catch {
+      }
+      hash3 = await client2.request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: account2.address,
+            to: options.to,
+            data: options.data,
+            value: options.value ? `0x${options.value.toString(16)}` : void 0,
+            gas: `0x${gasLimit.toString(16)}`,
+            type: "0x0",
+            ...gasPrice ? { gasPrice } : {}
+          }
+        ]
+      });
     }
-    const serializedTx = await signTransaction2(txRequest);
-    const hash3 = await publicClient.sendRawTransaction({ serializedTransaction: serializedTx });
     const receipt = await publicClient.waitForTransactionReceipt({ hash: hash3 });
     if (receipt.status === "reverted") {
       let revertReason = "Unknown reason";
@@ -37270,18 +39968,68 @@ var stakingActions = (client2, publicClient) => {
       client: publicClient
     });
   };
+  const getValidatorRegistrationContext = async () => {
+    if (!client2.account) {
+      throw new Error("Account is required to resolve validator registration context.");
+    }
+    const consensusMain = client2.chain.consensusMainContract;
+    if (!consensusMain?.address || consensusMain.address === zeroAddress) {
+      throw new Error("Cannot resolve ValidatorWalletFactory without a consensus main contract.");
+    }
+    const [addressManager, chainId] = await Promise.all([
+      publicClient.readContract({
+        address: consensusMain.address,
+        abi: CONSENSUS_ADDRESS_MANAGER_ABI,
+        functionName: "getAddressManager"
+      }),
+      publicClient.getChainId()
+    ]);
+    const registrar = await publicClient.readContract({
+      address: addressManager,
+      abi: ADDRESS_MANAGER_ABI2,
+      functionName: "getAddress",
+      args: [VALIDATOR_WALLET_FACTORY_KEY]
+    });
+    if (!registrar || registrar === zeroAddress) {
+      throw new Error(
+        `ValidatorWalletFactory is not registered in AddressManager under key ${VALIDATOR_WALLET_FACTORY_KEY}.`
+      );
+    }
+    return {
+      registrar,
+      owner: client2.account.address,
+      chainId: BigInt(chainId)
+    };
+  };
+  const getOperatorTransferContext = async (validator) => {
+    const [owner, chainId] = await Promise.all([
+      publicClient.readContract({
+        address: validator,
+        abi: VALIDATOR_WALLET_ABI,
+        functionName: "owner"
+      }),
+      publicClient.getChainId()
+    ]);
+    return {
+      registrar: validator,
+      owner,
+      chainId: BigInt(chainId)
+    };
+  };
   return {
     /** Joins as a validator with the specified stake amount. */
     validatorJoin: async (options) => {
       const amount = parseStakingAmount(options.amount);
       const stakingAddress = getStakingAddress();
-      const data = options.operator ? encodeFunctionData({
+      const context = await getValidatorRegistrationContext();
+      if (!await verifyOperatorRegistration(options.registration, context)) {
+        throw new Error("Operator registration proof does not match the owner, registrar, chain, or public key.");
+      }
+      const operator = operatorAddressFromPublicKey(options.registration.operatorPubKey);
+      const data = encodeFunctionData({
         abi: STAKING_ABI,
         functionName: "validatorJoin",
-        args: [options.operator]
-      }) : encodeFunctionData({
-        abi: STAKING_ABI,
-        functionName: "validatorJoin"
+        args: [options.registration.operatorPubKey, options.registration.possessionProof]
       });
       const result = await executeWrite({ to: stakingAddress, data, value: amount });
       const receipt = await publicClient.getTransactionReceipt({ hash: result.transactionHash });
@@ -37308,11 +40056,13 @@ var stakingActions = (client2, publicClient) => {
         blockNumber: receipt.blockNumber,
         gasUsed: receipt.gasUsed,
         validatorWallet,
-        operator: options.operator || client2.account.address,
+        operator,
         amount: formatStakingAmount(amount),
         amountRaw: amount
       };
     },
+    /** Resolves the registrar, owner, and chain binding required to create an operator proof. */
+    getValidatorRegistrationContext,
     /**
      * Adds additional self-stake to an active validator position. The
      * underlying Staking contract requires msg.sender == ValidatorWallet,
@@ -37363,14 +40113,61 @@ var stakingActions = (client2, publicClient) => {
       });
       return executeWrite({ to: getStakingAddress(), data });
     },
-    /** Sets the operator address for a validator wallet. */
+    /** @deprecated Use initiateOperatorTransfer followed by completeOperatorTransfer. */
     setOperator: async (options) => {
+      throw new Error(
+        `setOperator cannot rotate ${options.validator} to ${options.operator} on the train: create an operator possession proof, then call initiateOperatorTransfer and completeOperatorTransfer.`
+      );
+    },
+    getOperatorTransferContext,
+    /**
+     * Starts the two-step operator rotation. The proof is checked against the
+     * wallet-bound context before submission so a registration built for the
+     * wrong registrar fails locally instead of as an opaque on-chain revert.
+     */
+    initiateOperatorTransfer: async (options) => {
+      const context = await getOperatorTransferContext(options.validator);
+      if (!await verifyOperatorRegistration(options.registration, context)) {
+        throw new Error(
+          "Operator registration proof does not match the wallet, owner, chain, or public key. Rotation proofs must use the validator wallet as their registrar."
+        );
+      }
       const data = encodeFunctionData({
         abi: VALIDATOR_WALLET_ABI,
-        functionName: "setOperator",
-        args: [options.operator]
+        functionName: "initiateOperatorTransfer",
+        args: [options.registration.operatorPubKey, options.registration.possessionProof]
       });
       return executeWrite({ to: options.validator, data });
+    },
+    /**
+     * Completes a pending rotation. Callable by the wallet owner or the pending
+     * operator, and only once the factory's operatorTransferDelay has elapsed.
+     */
+    completeOperatorTransfer: async (options) => {
+      const data = encodeFunctionData({
+        abi: VALIDATOR_WALLET_ABI,
+        functionName: "completeOperatorTransfer",
+        args: []
+      });
+      return executeWrite({ to: options.validator, data });
+    },
+    /** Abandons a pending rotation, leaving the current operator in place. */
+    cancelOperatorTransfer: async (options) => {
+      const data = encodeFunctionData({
+        abi: VALIDATOR_WALLET_ABI,
+        functionName: "cancelOperatorTransfer",
+        args: []
+      });
+      return executeWrite({ to: options.validator, data });
+    },
+    /** Reads the pending operator and when its transfer was initiated. */
+    getPendingOperator: async (validator) => {
+      const [operator, initiatedAt] = await publicClient.readContract({
+        address: validator,
+        abi: VALIDATOR_WALLET_ABI,
+        functionName: "getPendingOperator"
+      });
+      return { operator, initiatedAt };
     },
     /** Sets validator identity information (name, website, social links). */
     setIdentity: async (options) => {
@@ -37439,7 +40236,7 @@ var stakingActions = (client2, publicClient) => {
       });
       return executeWrite({ to: getStakingAddress(), data });
     },
-    /** Checks if an address is an active validator. */
+    /** Checks whether an address is a registered/joined validator wallet. */
     isValidator: async (address) => {
       const contract = getReadOnlyStakingContract();
       return contract.read.isValidator([address]);
@@ -37456,12 +40253,14 @@ var stakingActions = (client2, publicClient) => {
         abi: VALIDATOR_WALLET_ABI,
         client: publicClient
       });
-      const [view, owner, operator, identityRaw, currentEpoch] = await Promise.all([
+      const [view, owner, operator, identityRaw, currentEpoch, validatorMinStake, banned] = await Promise.all([
         contract.read.validatorView([validator]),
         walletContract.read.owner(),
         walletContract.read.operator(),
         walletContract.read.getIdentity().catch(() => null),
-        contract.read.epoch()
+        contract.read.epoch(),
+        contract.read.validatorMinStake(),
+        contract.read.isValidatorBanned([validator])
       ]);
       let identity;
       if (identityRaw && identityRaw.moniker) {
@@ -37516,13 +40315,31 @@ var stakingActions = (client2, publicClient) => {
         vWithdrawalRaw: view.vWithdrawal,
         ePrimed: view.ePrimed,
         live: view.live,
-        banned: view.eBanned > 0n,
-        bannedEpoch: view.eBanned > 0n ? view.eBanned : void 0,
+        banned,
+        bannedEpoch: banned ? view.eBanned : void 0,
         needsPriming,
+        currentEpoch,
+        validatorMinStake: formatStakingAmount(validatorMinStake),
+        validatorMinStakeRaw: validatorMinStake,
+        belowMin: view.vStake < validatorMinStake,
         identity,
         pendingDeposits,
         pendingWithdrawals
       };
+    },
+    /** Returns the current epoch number. */
+    getCurrentEpoch: async () => {
+      const contract = getReadOnlyStakingContract();
+      return await contract.read.epoch();
+    },
+    /** Checks whether a validator's self-stake is below the configured validator minimum. */
+    isValidatorBelowMin: async (validator) => {
+      const contract = getReadOnlyStakingContract();
+      const [view, minStake] = await Promise.all([
+        contract.read.validatorView([validator]),
+        contract.read.validatorMinStake()
+      ]);
+      return view.vStake < minStake;
     },
     /** Returns delegation stake information for a delegator-validator pair. */
     getStakeInfo: async (delegator, validator) => {
@@ -37594,7 +40411,7 @@ var stakingActions = (client2, publicClient) => {
       ] = await Promise.all([
         contract.read.epoch(),
         contract.read.finalized(),
-        contract.read.activeValidatorsCount(),
+        contract.read.selectableValidatorsCount(),
         contract.read.epochMinDuration(),
         contract.read.epochZeroMinDuration(),
         contract.read.epochOdd(),
@@ -37627,6 +40444,8 @@ var stakingActions = (client2, publicClient) => {
         currentEpoch: epoch,
         lastFinalizedEpoch: finalized,
         activeValidatorsCount: activeCount,
+        totalWeight: currentEpochData.weight,
+        inflationRaw: currentEpochData.inflation,
         epochMinDuration,
         nextEpochEstimate,
         validatorMinStake: formatStakingAmount(valMinStake),
@@ -37664,16 +40483,32 @@ var stakingActions = (client2, publicClient) => {
         slashed: raw[10]
       };
     },
-    /** Returns addresses of all currently active validators. */
+    /** Returns validators currently eligible for consensus duties. */
     getActiveValidators: async () => {
       const contract = getReadOnlyStakingContract();
-      const validators = await contract.read.activeValidators();
-      return validators.filter((v) => v !== "0x0000000000000000000000000000000000000000");
+      return contract.read.selectableValidators();
     },
-    /** Returns the count of active validators. */
+    /** Returns the count of validators currently eligible for consensus duties. */
     getActiveValidatorsCount: async () => {
       const contract = getReadOnlyStakingContract();
-      return contract.read.activeValidatorsCount();
+      return contract.read.selectableValidatorsCount();
+    },
+    /** Returns every validator identity in the append-only joined registry. */
+    getJoinedValidators: async () => {
+      const contract = getReadOnlyStakingContract();
+      const total = await contract.read.validatorsJoinedCount();
+      const validators = [];
+      for (let start = 0n; start < total; start += VALIDATORS_JOINED_PAGE_SIZE) {
+        const page = await contract.read.getValidatorsJoined([start, VALIDATORS_JOINED_PAGE_SIZE]);
+        if (page.length === 0) break;
+        validators.push(...page);
+      }
+      return validators.filter((v) => v !== "0x0000000000000000000000000000000000000000");
+    },
+    /** Returns the size of the append-only joined validator registry. */
+    getJoinedValidatorsCount: async () => {
+      const contract = getReadOnlyStakingContract();
+      return contract.read.validatorsJoinedCount();
     },
     /** Returns addresses of validators currently in quarantine. */
     getQuarantinedValidators: async () => {
@@ -37703,6 +40538,566 @@ var stakingActions = (client2, publicClient) => {
     getStakingContract,
     parseStakingAmount,
     formatStakingAmount
+  };
+};
+var FALLBACK_GAS2 = 1000000n;
+var GAS_BUFFER_MULTIPLIER2 = 2n;
+var VESTING_FACTORY_KEY = "VestingFactory";
+var VALIDATOR_WALLET_FACTORY_KEY2 = "ValidatorWalletFactory";
+var COMBINED_ERROR_ABI2 = [...VESTING_ABI, ...VESTING_FACTORY_ABI, ...ADDRESS_MANAGER_ABI2, ...STAKING_ABI];
+function extractRevertReason2(err) {
+  if (err instanceof BaseError2) {
+    const rawError = err.walk((e) => e instanceof RawContractError);
+    if (rawError instanceof RawContractError && rawError.data && typeof rawError.data === "string") {
+      try {
+        const decoded = decodeErrorResult({ abi: COMBINED_ERROR_ABI2, data: rawError.data });
+        return decoded.errorName;
+      } catch {
+      }
+    }
+    let current = err;
+    while (current) {
+      if (current && typeof current === "object") {
+        const obj = current;
+        if (obj.data && typeof obj.data === "string" && obj.data.startsWith("0x")) {
+          try {
+            const decoded = decodeErrorResult({ abi: COMBINED_ERROR_ABI2, data: obj.data });
+            return decoded.errorName;
+          } catch {
+          }
+        }
+        current = obj.cause;
+      } else {
+        break;
+      }
+    }
+    const revertError = err.walk((e) => e instanceof ContractFunctionRevertedError);
+    if (revertError instanceof ContractFunctionRevertedError) {
+      if (revertError.data?.errorName) {
+        return revertError.data.errorName;
+      }
+      return revertError.reason || "Unknown reason";
+    }
+    if (err.shortMessage) return err.shortMessage;
+  }
+  if (err instanceof Error) return err.message;
+  return "Unknown reason";
+}
+function encodeExtraCid(extraCid) {
+  if (!extraCid) return "0x";
+  if (extraCid.startsWith("0x")) return extraCid;
+  return toHex(new TextEncoder().encode(extraCid));
+}
+var vestingActions = (client2, publicClient) => {
+  const executeWrite = async (options) => {
+    if (!client2.account) {
+      throw new Error("Account is required for write operations. Initialize client with a wallet account.");
+    }
+    const account2 = client2.account;
+    try {
+      await publicClient.call({
+        account: account2,
+        to: options.to,
+        data: options.data,
+        value: options.value
+      });
+    } catch (err) {
+      const revertReason = extractRevertReason2(err);
+      throw new Error(`Transaction would revert: ${revertReason}`);
+    }
+    let gasLimit = options.gas;
+    if (!gasLimit) {
+      try {
+        const estimated = await publicClient.estimateGas({
+          account: account2,
+          to: options.to,
+          data: options.data,
+          value: options.value
+        });
+        gasLimit = estimated * GAS_BUFFER_MULTIPLIER2;
+      } catch {
+        gasLimit = FALLBACK_GAS2;
+      }
+    }
+    let hash3;
+    if (account2.type === "local") {
+      const nonce = await publicClient.getTransactionCount({ address: account2.address });
+      const txRequest = await publicClient.prepareTransactionRequest({
+        account: account2,
+        to: options.to,
+        data: options.data,
+        value: options.value,
+        type: "legacy",
+        nonce,
+        gas: gasLimit,
+        chain: client2.chain
+      });
+      const signTransaction2 = account2.signTransaction;
+      if (!signTransaction2) {
+        throw new Error("Account does not support signing transactions");
+      }
+      const serializedTx = await signTransaction2(txRequest);
+      hash3 = await publicClient.sendRawTransaction({ serializedTransaction: serializedTx });
+    } else {
+      let gasPrice;
+      try {
+        gasPrice = await client2.request({ method: "eth_gasPrice" });
+      } catch {
+      }
+      hash3 = await client2.request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: account2.address,
+            to: options.to,
+            data: options.data,
+            value: options.value ? `0x${options.value.toString(16)}` : void 0,
+            gas: `0x${gasLimit.toString(16)}`,
+            type: "0x0",
+            ...gasPrice ? { gasPrice } : {}
+          }
+        ]
+      });
+    }
+    const receipt = await publicClient.waitForTransactionReceipt({ hash: hash3 });
+    if (receipt.status === "reverted") {
+      let revertReason = "Unknown reason";
+      try {
+        await publicClient.call({
+          account: account2,
+          to: options.to,
+          data: options.data,
+          value: options.value,
+          blockNumber: receipt.blockNumber
+        });
+        const gasUsed = receipt.gasUsed;
+        if (gasUsed >= gasLimit - 1000n) {
+          revertReason = `Out of gas (used ${gasUsed}, limit ${gasLimit})`;
+        } else {
+          revertReason = `Unknown (simulation passes but tx reverts). Gas: ${gasUsed}/${gasLimit}`;
+        }
+      } catch (err) {
+        revertReason = extractRevertReason2(err);
+      }
+      throw new Error(`Transaction reverted: ${revertReason} (tx: ${hash3})`);
+    }
+    return {
+      transactionHash: receipt.transactionHash,
+      blockNumber: receipt.blockNumber,
+      gasUsed: receipt.gasUsed
+    };
+  };
+  const readVesting = async (vesting, functionName, args = []) => {
+    return publicClient.readContract({
+      address: vesting,
+      abi: VESTING_ABI,
+      functionName,
+      args
+    });
+  };
+  const readFactory = async (factory, functionName, args = []) => {
+    return publicClient.readContract({
+      address: factory,
+      abi: VESTING_FACTORY_ABI,
+      functionName,
+      args
+    });
+  };
+  const getAddressManagerAddress = async (addressManager) => {
+    if (addressManager) return addressManager;
+    const consensusMain = client2.chain.consensusMainContract;
+    if (!consensusMain?.address || consensusMain.address === zeroAddress) {
+      throw new Error("Cannot discover VestingFactory without a consensus main contract or explicit addressManager.");
+    }
+    return publicClient.readContract({
+      address: consensusMain.address,
+      abi: CONSENSUS_ADDRESS_MANAGER_ABI,
+      functionName: "getAddressManager"
+    });
+  };
+  const resolveVestingFactoryAddress = async (options) => {
+    if (options?.factory) return options.factory;
+    const addressManager = await getAddressManagerAddress(options?.addressManager);
+    const factory = await publicClient.readContract({
+      address: addressManager,
+      abi: ADDRESS_MANAGER_ABI2,
+      functionName: "getAddress",
+      args: [VESTING_FACTORY_KEY]
+    });
+    if (!factory || factory === zeroAddress) {
+      throw new Error(`VestingFactory is not registered in AddressManager under key ${VESTING_FACTORY_KEY}.`);
+    }
+    return factory;
+  };
+  const getVestingValidatorRegistrationContext = async (vesting) => {
+    const [addressManager, chainId] = await Promise.all([
+      readVesting(vesting, "addressManager"),
+      publicClient.getChainId()
+    ]);
+    const registrar = await publicClient.readContract({
+      address: addressManager,
+      abi: ADDRESS_MANAGER_ABI2,
+      functionName: "getAddress",
+      args: [VALIDATOR_WALLET_FACTORY_KEY2]
+    });
+    if (!registrar || registrar === zeroAddress) {
+      throw new Error(
+        `ValidatorWalletFactory is not registered in AddressManager under key ${VALIDATOR_WALLET_FACTORY_KEY2}.`
+      );
+    }
+    return {
+      registrar,
+      owner: vesting,
+      chainId: BigInt(chainId)
+    };
+  };
+  const getVestingContract = (vesting) => {
+    return getContract({
+      address: vesting,
+      abi: VESTING_ABI,
+      client: { public: publicClient, wallet: client2 }
+    });
+  };
+  const getVestingFactoryContract = (factory) => {
+    return getContract({
+      address: factory,
+      abi: VESTING_FACTORY_ABI,
+      client: publicClient
+    });
+  };
+  return {
+    /** Delegates vesting-held tokens to a validator. Must be called by the vesting beneficiary. */
+    vestingDelegatorJoin: async (options) => {
+      const amount = parseStakingAmount(options.amount);
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingDelegatorJoin",
+        args: [options.validator, amount]
+      });
+      const result = await executeWrite({ to: options.vesting, data });
+      return {
+        ...result,
+        vesting: options.vesting,
+        validator: options.validator,
+        beneficiary: client2.account.address,
+        amount: formatStakingAmount(amount),
+        amountRaw: amount
+      };
+    },
+    /** Exits a vesting contract's delegation by burning shares. Must be called by the vesting beneficiary. */
+    vestingDelegatorExit: async (options) => {
+      const shares = typeof options.shares === "string" ? BigInt(options.shares) : options.shares;
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingDelegatorExit",
+        args: [options.validator, shares]
+      });
+      return executeWrite({ to: options.vesting, data });
+    },
+    /** Claims exited delegation funds back into the vesting contract. Must be called by the vesting beneficiary. */
+    vestingDelegatorClaim: async (options) => {
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingDelegatorClaim",
+        args: [options.validator]
+      });
+      return executeWrite({ to: options.vesting, data });
+    },
+    /** Creates a validator wallet and self-stakes vesting-held tokens. Must be called by the vesting beneficiary. */
+    vestingValidatorJoin: async (options) => {
+      const amount = parseStakingAmount(options.amount);
+      const context = await getVestingValidatorRegistrationContext(options.vesting);
+      if (!await verifyOperatorRegistration(options.registration, context)) {
+        throw new Error("Operator registration proof does not match the vesting, registrar, chain, or public key.");
+      }
+      const operator = operatorAddressFromPublicKey(options.registration.operatorPubKey);
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingValidatorJoin",
+        args: [options.registration.operatorPubKey, options.registration.possessionProof, amount]
+      });
+      const result = await executeWrite({ to: options.vesting, data });
+      return {
+        ...result,
+        vesting: options.vesting,
+        operator,
+        beneficiary: client2.account.address,
+        amount: formatStakingAmount(amount),
+        amountRaw: amount
+      };
+    },
+    /** Adds more vesting-held self-stake to one of the vesting's validator wallets. */
+    vestingValidatorDeposit: async (options) => {
+      const amount = parseStakingAmount(options.amount);
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingValidatorDeposit",
+        args: [options.wallet, amount]
+      });
+      return executeWrite({ to: options.vesting, data });
+    },
+    /** Exits validator self-stake by burning shares from a vesting-owned validator wallet. */
+    vestingValidatorExit: async (options) => {
+      const shares = typeof options.shares === "string" ? BigInt(options.shares) : options.shares;
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingValidatorExit",
+        args: [options.wallet, shares]
+      });
+      return executeWrite({ to: options.vesting, data });
+    },
+    /** Claims exited validator self-stake back into the vesting contract. */
+    vestingValidatorClaim: async (options) => {
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingValidatorClaim",
+        args: [options.wallet]
+      });
+      return executeWrite({ to: options.vesting, data });
+    },
+    /** Begins a two-step operator transfer for a vesting-owned validator wallet. */
+    vestingValidatorInitiateOperatorTransfer: async (options) => {
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingValidatorInitiateOperatorTransfer",
+        args: [options.wallet, options.newOperator]
+      });
+      return executeWrite({ to: options.vesting, data });
+    },
+    /** Completes a pending operator transfer for a vesting-owned validator wallet. */
+    vestingValidatorCompleteOperatorTransfer: async (options) => {
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingValidatorCompleteOperatorTransfer",
+        args: [options.wallet]
+      });
+      return executeWrite({ to: options.vesting, data });
+    },
+    /** Cancels a pending operator transfer for a vesting-owned validator wallet. */
+    vestingValidatorCancelOperatorTransfer: async (options) => {
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingValidatorCancelOperatorTransfer",
+        args: [options.wallet]
+      });
+      return executeWrite({ to: options.vesting, data });
+    },
+    /** Sets validator identity metadata on a vesting-owned validator wallet. */
+    vestingValidatorSetIdentity: async (options) => {
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingValidatorSetIdentity",
+        args: [
+          options.wallet,
+          options.moniker,
+          options.logoUri || "",
+          options.website || "",
+          options.description || "",
+          options.email || "",
+          options.twitter || "",
+          options.telegram || "",
+          options.github || "",
+          encodeExtraCid(options.extraCid)
+        ]
+      });
+      return executeWrite({ to: options.vesting, data });
+    },
+    /** Withdraws vested tokens to the beneficiary. Must be called by the vesting beneficiary. */
+    vestingWithdraw: async (options) => {
+      const amount = parseStakingAmount(options.amount);
+      const data = encodeFunctionData({
+        abi: VESTING_ABI,
+        functionName: "vestingWithdraw",
+        args: [amount]
+      });
+      const result = await executeWrite({ to: options.vesting, data });
+      return {
+        ...result,
+        vesting: options.vesting,
+        beneficiary: client2.account.address,
+        amount: formatStakingAmount(amount),
+        amountRaw: amount
+      };
+    },
+    /** Resolves VestingFactory from AddressManager key "VestingFactory". */
+    getVestingFactoryAddress: async (options) => {
+      return resolveVestingFactoryAddress(options);
+    },
+    /** Returns the Vesting contract for a beneficiary, or null when none is registered. */
+    getVestingForBeneficiary: async (beneficiary, options) => {
+      const factory = await resolveVestingFactoryAddress(options);
+      const vesting = await readFactory(factory, "getVesting", [beneficiary]);
+      return vesting === zeroAddress ? null : vesting;
+    },
+    /** Returns the beneficiary's vesting contracts. v0.6-dev permits one vesting per beneficiary. */
+    getBeneficiaryVestings: async (beneficiary, options) => {
+      const vesting = await resolveVestingFactoryAddress(options).then((factory) => readFactory(factory, "getVesting", [beneficiary]));
+      return vesting === zeroAddress ? [] : [vesting];
+    },
+    /** Checks whether an address is registered as a Vesting contract by the factory. */
+    isVestingAddress: async (address, options) => {
+      const factory = await resolveVestingFactoryAddress(options);
+      return readFactory(factory, "isVestingAddress", [address]);
+    },
+    getVestingContract,
+    getVestingFactoryContract,
+    vestedAmount: (vesting) => readVesting(vesting, "vestedAmount"),
+    unvestedAmount: (vesting) => readVesting(vesting, "unvestedAmount"),
+    withdrawableAmount: (vesting) => readVesting(vesting, "withdrawableAmount"),
+    getVestingSchedule: async (vesting) => {
+      const [startDate, cliffDuration, periodDuration, numberOfPeriods, cliffUnlockBps, needsManualUnlock] = await Promise.all([
+        readVesting(vesting, "startDate"),
+        readVesting(vesting, "cliffDuration"),
+        readVesting(vesting, "periodDuration"),
+        readVesting(vesting, "numberOfPeriods"),
+        readVesting(vesting, "cliffUnlockBps"),
+        readVesting(vesting, "needsManualUnlock")
+      ]);
+      return { startDate, cliffDuration, periodDuration, numberOfPeriods, cliffUnlockBps, needsManualUnlock };
+    },
+    getVestingState: async (vesting) => {
+      const [
+        name,
+        category,
+        beneficiary,
+        creator,
+        revoker,
+        factory,
+        addressManager,
+        totalAmount,
+        startDate,
+        cliffDuration,
+        periodDuration,
+        numberOfPeriods,
+        cliffUnlockBps,
+        needsManualUnlock,
+        manualUnlocked,
+        revoked,
+        vestingStopped,
+        totalWithdrawn,
+        vestedAtRevocation,
+        totalAmountAtRevocation,
+        revokedAt,
+        vestingStoppedAt,
+        vestedAtStop,
+        postRevocationBeneficiaryRewards,
+        postRevocationBeneficiaryLosses,
+        accumulatedRewards,
+        accumulatedLosses,
+        vested,
+        unvested,
+        withdrawable
+      ] = await Promise.all([
+        readVesting(vesting, "name"),
+        readVesting(vesting, "category"),
+        readVesting(vesting, "beneficiary"),
+        readVesting(vesting, "creator"),
+        readVesting(vesting, "revoker"),
+        readVesting(vesting, "factory"),
+        readVesting(vesting, "addressManager"),
+        readVesting(vesting, "totalAmount"),
+        readVesting(vesting, "startDate"),
+        readVesting(vesting, "cliffDuration"),
+        readVesting(vesting, "periodDuration"),
+        readVesting(vesting, "numberOfPeriods"),
+        readVesting(vesting, "cliffUnlockBps"),
+        readVesting(vesting, "needsManualUnlock"),
+        readVesting(vesting, "manualUnlocked"),
+        readVesting(vesting, "revoked"),
+        readVesting(vesting, "vestingStopped"),
+        readVesting(vesting, "totalWithdrawn"),
+        readVesting(vesting, "vestedAtRevocation"),
+        readVesting(vesting, "totalAmountAtRevocation"),
+        readVesting(vesting, "revokedAt"),
+        readVesting(vesting, "vestingStoppedAt"),
+        readVesting(vesting, "vestedAtStop"),
+        readVesting(vesting, "postRevocationBeneficiaryRewards"),
+        readVesting(vesting, "postRevocationBeneficiaryLosses"),
+        readVesting(vesting, "accumulatedRewards"),
+        readVesting(vesting, "accumulatedLosses"),
+        readVesting(vesting, "vestedAmount"),
+        readVesting(vesting, "unvestedAmount"),
+        readVesting(vesting, "withdrawableAmount")
+      ]);
+      return {
+        name,
+        category,
+        beneficiary,
+        creator,
+        revoker,
+        factory,
+        addressManager,
+        totalAmount: formatStakingAmount(totalAmount),
+        totalAmountRaw: totalAmount,
+        startDate,
+        cliffDuration,
+        periodDuration,
+        numberOfPeriods,
+        cliffUnlockBps,
+        needsManualUnlock,
+        manualUnlocked,
+        revoked,
+        vestingStopped,
+        totalWithdrawn: formatStakingAmount(totalWithdrawn),
+        totalWithdrawnRaw: totalWithdrawn,
+        vestedAtRevocation: formatStakingAmount(vestedAtRevocation),
+        vestedAtRevocationRaw: vestedAtRevocation,
+        totalAmountAtRevocation: formatStakingAmount(totalAmountAtRevocation),
+        totalAmountAtRevocationRaw: totalAmountAtRevocation,
+        revokedAt,
+        vestingStoppedAt,
+        vestedAtStop: formatStakingAmount(vestedAtStop),
+        vestedAtStopRaw: vestedAtStop,
+        postRevocationBeneficiaryRewards: formatStakingAmount(postRevocationBeneficiaryRewards),
+        postRevocationBeneficiaryRewardsRaw: postRevocationBeneficiaryRewards,
+        postRevocationBeneficiaryLosses: formatStakingAmount(postRevocationBeneficiaryLosses),
+        postRevocationBeneficiaryLossesRaw: postRevocationBeneficiaryLosses,
+        accumulatedRewards: formatStakingAmount(accumulatedRewards),
+        accumulatedRewardsRaw: accumulatedRewards,
+        accumulatedLosses: formatStakingAmount(accumulatedLosses),
+        accumulatedLossesRaw: accumulatedLosses,
+        vestedAmount: formatStakingAmount(vested),
+        vestedAmountRaw: vested,
+        unvestedAmount: formatStakingAmount(unvested),
+        unvestedAmountRaw: unvested,
+        withdrawableAmount: formatStakingAmount(withdrawable),
+        withdrawableAmountRaw: withdrawable
+      };
+    },
+    vestingName: (vesting) => readVesting(vesting, "name"),
+    vestingCategory: (vesting) => readVesting(vesting, "category"),
+    vestingBeneficiary: (vesting) => readVesting(vesting, "beneficiary"),
+    vestingCreator: (vesting) => readVesting(vesting, "creator"),
+    vestingRevoker: (vesting) => readVesting(vesting, "revoker"),
+    vestingFactory: (vesting) => readVesting(vesting, "factory"),
+    vestingAddressManager: (vesting) => readVesting(vesting, "addressManager"),
+    getVestingValidatorRegistrationContext,
+    vestingTotalAmount: (vesting) => readVesting(vesting, "totalAmount"),
+    vestingStartDate: (vesting) => readVesting(vesting, "startDate"),
+    vestingCliffDuration: (vesting) => readVesting(vesting, "cliffDuration"),
+    vestingPeriodDuration: (vesting) => readVesting(vesting, "periodDuration"),
+    vestingNumberOfPeriods: (vesting) => readVesting(vesting, "numberOfPeriods"),
+    vestingCliffUnlockBps: (vesting) => readVesting(vesting, "cliffUnlockBps"),
+    vestingNeedsManualUnlock: (vesting) => readVesting(vesting, "needsManualUnlock"),
+    vestingManualUnlocked: (vesting) => readVesting(vesting, "manualUnlocked"),
+    vestingRevoked: (vesting) => readVesting(vesting, "revoked"),
+    vestingStopped: (vesting) => readVesting(vesting, "vestingStopped"),
+    vestingTotalWithdrawn: (vesting) => readVesting(vesting, "totalWithdrawn"),
+    vestingVestedAtRevocation: (vesting) => readVesting(vesting, "vestedAtRevocation"),
+    vestingTotalAmountAtRevocation: (vesting) => readVesting(vesting, "totalAmountAtRevocation"),
+    vestingRevokedAt: (vesting) => readVesting(vesting, "revokedAt"),
+    vestingStoppedAt: (vesting) => readVesting(vesting, "vestingStoppedAt"),
+    vestingVestedAtStop: (vesting) => readVesting(vesting, "vestedAtStop"),
+    vestingPostRevocationBeneficiaryRewards: (vesting) => readVesting(vesting, "postRevocationBeneficiaryRewards"),
+    vestingPostRevocationBeneficiaryLosses: (vesting) => readVesting(vesting, "postRevocationBeneficiaryLosses"),
+    vestingDepositedPerValidator: (vesting, validator) => readVesting(vesting, "depositedPerValidator", [validator]),
+    vestingPendingExitDeposited: (vesting, validator) => readVesting(vesting, "pendingExitDeposited", [validator]),
+    getValidatorWallets: (vesting) => readVesting(vesting, "getValidatorWallets"),
+    validatorWalletCount: (vesting) => readVesting(vesting, "validatorWalletCount"),
+    validatorDeposited: (vesting, wallet) => readVesting(vesting, "validatorDeposited", [wallet]),
+    isValidatorWallet: (vesting, wallet) => readVesting(vesting, "isValidatorWallet", [wallet]),
+    vestingAccumulatedRewards: (vesting) => readVesting(vesting, "accumulatedRewards"),
+    vestingAccumulatedLosses: (vesting) => readVesting(vesting, "accumulatedLosses")
   };
 };
 function chainActions(_client) {
@@ -37798,7 +41193,7 @@ var createClient2 = (config = { chain: localnet }) => {
     transport: customTransport,
     ...config.account ? { account: config.account } : {}
   });
-  const clientWithBasicActions = baseClient.extend(publicActions).extend(walletActions).extend((client2) => accountActions(client2));
+  const clientWithBasicActions = baseClient.extend(publicActions).extend(walletActions).extend((client2) => accountActions(client2, publicClient));
   const clientWithTransactionActions = {
     ...clientWithBasicActions,
     ...transactionActions(clientWithBasicActions, publicClient),
@@ -37815,7 +41210,8 @@ var createClient2 = (config = { chain: localnet }) => {
   };
   const finalClient = {
     ...clientWithReceiptActions,
-    ...stakingActions(clientWithReceiptActions, publicClient)
+    ...stakingActions(clientWithReceiptActions, publicClient),
+    ...vestingActions(clientWithReceiptActions, publicClient)
   };
   return finalClient;
 };
@@ -37824,25 +41220,44 @@ var createPublicClient2 = (chainConfig, customTransport) => {
 };
 
 // public/app.mjs
-var LEDGER_ADDRESS = "0x337492Dc17BC8A03040137904D539748dACaD6f4";
+var LEDGER_ADDRESS = "0xC9DF9d35861696D963862Ee463bF432a5C028c8D";
+var CHAIN_NAME = "studioDevnet";
 var client = null;
 var account = null;
+var feeOpts = null;
+var sleep2 = (ms) => new Promise((r) => setTimeout(r, ms));
+async function fees() {
+  if (!feeOpts) {
+    const est = await createClient2({ chain: studioDevnet }).estimateTransactionFees({});
+    feeOpts = { distribution: est.distribution, feeValue: est.feeValue };
+  }
+  return feeOpts;
+}
+function validateAddress(addr) {
+  return /^0x[0-9a-fA-F]{40}$/.test(addr);
+}
+function show(el, text, kind) {
+  el.textContent = text;
+  el.className = "status" + (kind ? " " + kind : "");
+}
 async function connectWallet() {
   const b = document.getElementById("addr");
   const note = document.getElementById("netNote");
   try {
-    if (!window.ethereum) throw new Error("MetaMask is not installed.");
-    client = createClient2({ chain: testnetBradbury });
-    await client.connect("testnetBradbury");
-    if (!client.account) {
-      const [address2] = await window.ethereum.request({ method: "eth_requestAccounts" });
-      client.account = { address: address2 };
+    if (!window.ethereum) throw new Error("No browser wallet found (MetaMask).");
+    client = createClient2({ chain: studioDevnet });
+    await client.connect(CHAIN_NAME);
+    let address = client.account?.address;
+    if (!address) {
+      const accts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      address = accts[0];
+      client.account = { address };
     }
-    const address = typeof client.account?.address === "string" ? client.account.address : (await window.ethereum.request({ method: "eth_accounts" }))[0];
     account = client.account;
     b.textContent = "Connected: " + address;
-    note.textContent = "Connected to GenLayer Bradbury testnet.";
+    note.textContent = "GenLayer Studio dev (61997) \xB7 contract " + LEDGER_ADDRESS;
     document.getElementById("connectBtn").disabled = true;
+    await loadLedger();
   } catch (e) {
     b.textContent = "Connect failed";
     note.textContent = "Error: " + e.message;
@@ -37850,113 +41265,97 @@ async function connectWallet() {
 }
 function requireWallet(bar) {
   if (!client || !account) {
-    bar.className = "status err";
-    bar.textContent = "Connect your wallet first.";
+    show(bar, "Connect your wallet first.", "err");
     return false;
   }
   return true;
 }
-function validateAddress(addr) {
-  return /^0x[0-9a-fA-F]{40}$/.test(addr);
+async function submitWithResult(fn, args, value = 0n) {
+  const tx = await client.writeContract({
+    address: LEDGER_ADDRESS,
+    functionName: fn,
+    args,
+    value,
+    fees: await fees()
+  });
+  for (let i = 0; i < 40; i++) {
+    await sleep2(5e3);
+    for (const host of ["explorer-studio-dev.genlayer.com", "explorer-studio-next.genlayer.com"]) {
+      try {
+        const txt = await (await fetch(`https://${host}/api/transactions/${tx}`)).text();
+        if (!txt.trim().startsWith("{")) continue;
+        const lr = JSON.parse(txt)?.transaction?.consensus_data?.leader_receipt;
+        const e = Array.isArray(lr) ? lr[0] : lr;
+        if (!e?.execution_result) continue;
+        return {
+          tx,
+          ok: e.execution_result === "SUCCESS",
+          detail: String(e.genvm_result?.stderr || "").replace(/\n/g, " | ").slice(-260)
+        };
+      } catch {
+      }
+    }
+  }
+  return { tx, ok: null, detail: "no leader receipt yet \u2014 check the explorer shortly" };
+}
+function report(bar, res, doneMsg) {
+  if (res.ok === true) {
+    show(bar, `${doneMsg} Tx: ${res.tx}`, "ok");
+  } else if (res.ok === false) {
+    show(bar, `Refused by the contract. ${res.detail || ""}`, "err");
+  } else {
+    show(bar, `Submitted \u2014 consensus still running. Tx: ${res.tx}`, "");
+  }
+  loadLedger();
 }
 async function register() {
-  const st = document.getElementById("registerStatus");
-  if (!requireWallet(st)) return;
-  const amountInput = document.getElementById("stakeAmount");
-  const amount = parseFloat(amountInput.value || "1");
+  const bar = document.getElementById("registerStatus");
+  if (!requireWallet(bar)) return;
+  const amount = parseFloat(document.getElementById("stakeAmount").value || "1");
   if (isNaN(amount) || amount < 1) {
-    st.className = "status err";
-    st.textContent = "Minimum stake is 1 GEN.";
+    show(bar, "Minimum stake is 1 GEN.", "err");
     return;
   }
-  st.className = "status";
-  st.textContent = "Registering \u2014 confirm in MetaMask\u2026";
+  show(bar, "Registering \u2014 confirm in your wallet\u2026");
   try {
-    const txHash = await client.writeContract({
-      address: LEDGER_ADDRESS,
-      functionName: "register",
-      args: [],
-      value: BigInt(Math.floor(amount * 1e18))
-    });
-    st.className = "status ok";
-    st.textContent = "Registered! Tx: " + txHash;
+    const res = await submitWithResult("register", [], BigInt(Math.floor(amount * 1e18)));
+    report(bar, res, "Staked and registered.");
   } catch (e) {
-    st.className = "status err";
-    st.textContent = "Error: " + e.message;
+    show(bar, "Error: " + e.message, "err");
   }
 }
 async function createJob() {
-  const st = document.getElementById("jobStatus");
-  if (!requireWallet(st)) return;
+  const bar = document.getElementById("jobStatus");
+  if (!requireWallet(bar)) return;
   const jobId = document.getElementById("jobId").value.trim();
   const agent = document.getElementById("jobAgent").value.trim();
   const evidenceUrl = document.getElementById("evidenceUrl").value.trim();
   const claimed = document.getElementById("claimed").value.trim();
-  const resolveBlock = parseInt(document.getElementById("resolveBlock").value || "1000");
-  if (!jobId) {
-    st.className = "status err";
-    st.textContent = "Job ID required.";
-    return;
-  }
-  if (!validateAddress(agent)) {
-    st.className = "status err";
-    st.textContent = "Valid agent address required.";
-    return;
-  }
-  if (!evidenceUrl || !evidenceUrl.startsWith("http")) {
-    st.className = "status err";
-    st.textContent = "Valid evidence URL required.";
-    return;
-  }
-  if (!claimed) {
-    st.className = "status err";
-    st.textContent = "Claimed delivery required.";
-    return;
-  }
-  if (isNaN(resolveBlock) || resolveBlock <= 0) {
-    st.className = "status err";
-    st.textContent = "Valid resolve block required.";
-    return;
-  }
-  st.className = "status";
-  st.textContent = "Creating job \u2014 confirm in MetaMask\u2026";
+  const resolveBlock = parseInt(document.getElementById("resolveBlock").value || "1000", 10);
+  if (!jobId) return show(bar, "Job ID required.", "err");
+  if (!validateAddress(agent)) return show(bar, "Valid agent address required.", "err");
+  if (!evidenceUrl.startsWith("http")) return show(bar, "Valid evidence URL required.", "err");
+  if (!claimed) return show(bar, "Claimed delivery required.", "err");
+  if (isNaN(resolveBlock) || resolveBlock <= 0) return show(bar, "Valid resolve block required.", "err");
+  show(bar, "Creating job \u2014 confirm in your wallet\u2026");
   try {
-    const txHash = await client.writeContract({
-      address: LEDGER_ADDRESS,
-      functionName: "createJob",
-      args: [jobId, agent, evidenceUrl, claimed, resolveBlock],
-      value: 0n
-    });
-    st.className = "status ok";
-    st.textContent = "Job created! Tx: " + txHash;
+    const res = await submitWithResult("createJob", [jobId, agent, evidenceUrl, claimed, resolveBlock]);
+    report(bar, res, "Job created.");
   } catch (e) {
-    st.className = "status err";
-    st.textContent = "Error: " + e.message;
+    show(bar, "Error: " + e.message, "err");
   }
 }
 async function record() {
-  const st = document.getElementById("recordStatus");
-  if (!requireWallet(st)) return;
+  const bar = document.getElementById("recordStatus");
+  if (!requireWallet(bar)) return;
   const jobId = document.getElementById("recordJobId").value.trim();
-  if (!jobId) {
-    st.className = "status err";
-    st.textContent = "Job ID required.";
-    return;
-  }
-  st.className = "status";
-  st.textContent = "Recording \u2014 confirm in MetaMask\u2026";
+  if (!jobId) return show(bar, "Job ID required.", "err");
+  show(bar, "Recording \u2014 confirm in your wallet\u2026");
   try {
-    const txHash = await client.writeContract({
-      address: LEDGER_ADDRESS,
-      functionName: "record_delivery",
-      args: [jobId],
-      value: 0n
-    });
-    st.className = "status ok";
-    st.textContent = "Recorded! Tx: " + txHash;
+    const res = await submitWithResult("record_delivery", [jobId]);
+    report(bar, res, "Delivery recorded.");
   } catch (e) {
-    st.className = "status err";
-    st.textContent = "Error: " + e.message;
+    show(bar, "Error: " + e.message, "err");
   }
 }
 async function read() {
@@ -37997,12 +41396,101 @@ async function getJob() {
     out.textContent = "Error: " + e.message;
   }
 }
+var KNOWN_AGENTS = [
+  ["0x919a9E373A97272D2791be6aFf661902d874bb75", "Bob \u2014 two unsupported claims"],
+  ["0x2BEaD74E45B165E8c9f58920AB4f3093C995D253", "Alice \u2014 staked, no claims yet"]
+];
+var KNOWN_JOBS = [
+  ["job-audit-1", "Bob"],
+  ["job-audit-2", "Bob"],
+  ["job-release", "Alice"]
+];
+var GEN = 1e18;
+function card(rec, label) {
+  const stake = rec.staked / GEN;
+  const rows = [
+    ["staked", stake.toFixed(2) + " GEN"],
+    ["completed", rec.completed],
+    ["failed", rec.failed],
+    ["slashed", rec.slashed_count],
+    ["slash points", (rec.slash_points / GEN).toFixed(2) + " GEN"],
+    ["score", rec.score],
+    ["tier", rec.tier]
+  ];
+  const el = document.createElement("div");
+  el.className = "ledger-card";
+  el.innerHTML = `<div class="ledger-head"><strong>${label}</strong><span class="tier tier-${(rec.tier || "").toLowerCase()}">${rec.tier}</span></div><div class="ledger-addr">${rec.agent}</div>` + rows.map(([k, v]) => `<div class="ledger-row"><span>${k}</span><b>${v}</b></div>`).join("");
+  return el;
+}
+async function loadLedger() {
+  const box = document.getElementById("ledger");
+  if (!box) return;
+  if (!client) client = createClient2({ chain: studioDevnet });
+  box.innerHTML = '<div class="ledger-empty">Reading the ledger on-chain\u2026</div>';
+  try {
+    const agents = [];
+    for (const [addr, label] of KNOWN_AGENTS) {
+      try {
+        const r = await client.readContract({
+          address: LEDGER_ADDRESS,
+          functionName: "get_reputation",
+          args: [addr]
+        });
+        agents.push([JSON.parse(r), label]);
+      } catch {
+      }
+    }
+    const jobs = [];
+    for (const [id, who] of KNOWN_JOBS) {
+      try {
+        const r = await client.readContract({
+          address: LEDGER_ADDRESS,
+          functionName: "getJob",
+          args: [id]
+        });
+        const j = JSON.parse(r);
+        if (j.exists) jobs.push([j, who]);
+      } catch {
+      }
+    }
+    if (!agents.length) {
+      box.innerHTML = '<div class="ledger-empty">No agents registered yet.</div>';
+      return;
+    }
+    box.innerHTML = "";
+    const h = document.createElement("div");
+    h.className = "ledger-title";
+    h.textContent = "Live ledger \u2014 read from the contract";
+    box.appendChild(h);
+    agents.forEach(([rec, label]) => box.appendChild(card(rec, label)));
+    if (jobs.length) {
+      const jt = document.createElement("div");
+      jt.className = "ledger-title";
+      jt.textContent = "Jobs";
+      box.appendChild(jt);
+      for (const [j, who] of jobs) {
+        const d = document.createElement("div");
+        d.className = "ledger-job" + (j.recorded ? " done" : "");
+        const jid = document.createElement("code");
+        jid.textContent = j.job_id;
+        const meta = document.createElement("span");
+        meta.textContent = `${who} \xB7 ${j.recorded ? "recorded" : "awaiting delivery"}`;
+        d.append(jid, meta);
+        box.appendChild(d);
+      }
+    }
+  } catch (e) {
+    box.innerHTML = '<div class="ledger-empty">Could not read the ledger: ' + e.message + "</div>";
+  }
+}
 window.connectWallet = connectWallet;
 window.register = register;
 window.createJob = createJob;
 window.record = record;
 window.read = read;
 window.getJob = getJob;
+window.loadLedger = loadLedger;
+loadLedger();
 /*! Bundled license information:
 
 @noble/hashes/esm/utils.js:

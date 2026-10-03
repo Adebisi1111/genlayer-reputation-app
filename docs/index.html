@@ -27,7 +27,42 @@
   .addr{font-size:13px;color:var(--butter-dim)}
   .note{font-size:12px;color:var(--muted);margin-top:8px}
   .step{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--butter-dim);margin-top:4px}
-</style>
+
+    /* Live ledger ------------------------------------------------------ */
+    .ledger { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 4px; }
+    .ledger-title {
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); margin-top: 6px;
+    }
+    .ledger-empty { color: var(--muted); font-size: 0.9rem; padding: 8px 0; }
+    .ledger-card, .ledger-job {
+      border: 1px solid var(--hairline); border-radius: 10px; padding: 12px 14px;
+      background: rgba(255,255,255,0.02);
+    }
+    .ledger-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .ledger-addr {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.72rem; color: var(--muted); margin: 4px 0 8px; word-break: break-all;
+    }
+    .ledger-row {
+      display: flex; justify-content: space-between; font-size: 0.86rem;
+      padding: 3px 0; border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .ledger-row span { color: var(--muted); }
+    .tier {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+      padding: 3px 9px; border-radius: 999px;
+      border: 1px solid var(--hairline); color: var(--muted);
+    }
+    .tier-new { color: #60a5fa; border-color: rgba(96,165,250,0.5); }
+    .tier-trusted { color: #4ade80; border-color: rgba(74,222,128,0.5); }
+    .tier-established { color: #a78bfa; border-color: rgba(167,139,250,0.5); }
+    .tier-unproven { color: #fbbf24; border-color: rgba(251,191,36,0.5); }
+    .ledger-job { display: flex; flex-direction: column; gap: 3px; }
+    .ledger-job code { font-size: 0.84rem; color: #93c5fd; }
+    .ledger-job span { font-size: 0.78rem; color: var(--muted); }
+    .ledger-job.done span { color: #4ade80; }
+  </style>
 </head>
 <body>
 <div class="wrap">
@@ -44,6 +79,15 @@
   <div class="note" id="netNote"></div>
 
   <p class="sub" style="margin:20px 0 10px">Workflow: Register as agent → Issuer creates job → Agent records delivery → Read reputation</p>
+
+  <h2>Live ledger</h2>
+  <div class="card">
+    <p class="sub">Read straight from the contract on GenLayer Studio dev — no wallet needed.
+       These are real records: agents that staked GEN, jobs that were issued, and the
+       stake an agent lost when its delivery claim did not hold up.</p>
+    <div id="ledger" class="ledger"><div class="ledger-empty">Loading…</div></div>
+    <button onclick="loadLedger()">Refresh</button>
+  </div>
 
   <h2>1. Register</h2>
   <div class="card">
@@ -98,7 +142,7 @@
 
   <h2>Contract</h2>
   <div class="card">
-    <p class="sub">Deployed: <a href="https://explorer-bradbury.genlayer.com/address/0x337492Dc17BC8A03040137904D539748dACaD6f4" target="_blank">0x337492Dc17BC8A03040137904D539748dACaD6f4</a> (Bradbury)</p>
+    <p class="sub">Deployed: <a href="https://explorer-studio-dev.genlayer.com/address/0xC9DF9d35861696D963862Ee463bF432a5C028c8D" target="_blank">0xC9DF9d35861696D963862Ee463bF432a5C028c8D</a> (GenLayer Studio dev, chain 61997)</p>
     <p class="sub">Source + tests: <a href="https://github.com/Adebisi1111/genlayer-reputation-app" target="_blank">github.com/Adebisi1111/genlayer-reputation-app</a></p>
   </div>
 </div>

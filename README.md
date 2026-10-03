@@ -18,7 +18,20 @@ Stake-weighted reputation primitive with slashing, authorization, replay protect
 ## Contract
 - `contracts/agent_reputation_ledger.py`
 - Deployed Bradbury: `0x337492Dc17BC8A03040137904D539748dACaD6f4`
+- Deployed Studio dev (61997): `0x7FD4C6eF254c0e42795cd2494deFCcBBb3D7F934`
 
 ## Tests
-- `tests/direct/test_agent_reputation_ledger.py` (7 tests, all passing)
+
+`python3 -m pytest tests/ -q` — 23 passing.
+
+- `tests/test_agent_reputation_ledger.py` — core flow
+- `tests/direct/test_ledger_api.py` — the guards that cost an agent money
+
+Each guard is verified by reintroducing the defect and confirming the tests
+fail: authorization (3), replay protection (1), evidence dedup (2), slashing
+(2), minimum stake (1).
+
+An earlier `tests/direct/sync_ledger_test.py` tested `record_outcome(agent,
+outcome, evidence_url)` — an interface this contract does not have. It failed
+against the current code while the README still claimed the suite was green.
 # rebuild trigger

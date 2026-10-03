@@ -3,150 +3,262 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Agent Reputation Ledger — Live</title>
+<title>Agent Reputation Ledger — Live on GenLayer</title>
+<meta name="description" content="Stake-weighted reputation for autonomous agents. AI validators verify each delivery; a claim the evidence does not support burns 10% of an agent's stake on-chain." />
 <style>
-  :root{--bg:#1c130c;--panel:#241810;--butter:#e8c98a;--butter-dim:#c9a86a;--text:#f3e7d3;--muted:#a08a6b;--green:#7bd88f;--red:#e08a7a;--line:#3a2a1a}
+  :root{
+    --bg:#14100c; --panel:#1e1812; --panel-2:#241d15; --line:#3a2e20;
+    --butter:#f0cf8e; --butter-dim:#d4b076;
+    --text:#f6ecdb; --muted:#c9b795;
+    --green:#7bd88f; --red:#f09a86; --amber:#f3c969; --blue:#8ab8f0;
+    --r:14px;
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
-  .wrap{max-width:760px;margin:0 auto;padding:28px 18px 60px}
-  header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:24px}
-  .badge{display:inline-block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:var(--butter);color:var(--bg);padding:3px 10px;border-radius:999px;font-weight:700}
-  h1{font-size:26px;margin:12px 0 6px;color:var(--butter)}
-  .sub{color:var(--muted);font-size:14px}
-  h2{color:var(--butter);font-size:18px;margin:28px 0 10px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
-  input{width:100%;background:#15100a;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px;font-size:14px;font-family:inherit}
-  button{margin-top:12px;background:var(--butter);color:var(--bg);border:0;border-radius:10px;padding:11px 16px;font-weight:700;font-size:14px;cursor:pointer}
-  button:disabled{opacity:.5;cursor:default}
-  pre{background:#15100a;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;font-size:13px;color:var(--butter-dim);white-space:pre-wrap}
-  .status{margin-top:10px;font-size:13px;color:var(--muted)}
+  body{
+    margin:0;
+    /* Anchor to the top-left and fade out fast: a centred radial with `fixed`
+       repeated per viewport-height and cut the page from dark to cream in the
+       middle of the ledger panel. */
+    background:
+      radial-gradient(900px 460px at 22% -8%, #2a2115 0%, rgba(20,16,12,0) 70%),
+      var(--bg);
+    background-attachment:scroll;
+    color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:34px 20px 80px}
+
+  header{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:26px}
+  .badge{
+    display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    background:var(--butter);color:#14100c;padding:4px 11px;border-radius:999px;font-weight:800;
+  }
+  h1{font-size:clamp(28px,5vw,38px);margin:14px 0 8px;letter-spacing:-.02em;color:var(--butter);line-height:1.15}
+  .lede{color:var(--muted);font-size:15.5px;max-width:64ch;margin:0}
+
+  h2{
+    color:var(--butter);font-size:14px;margin:34px 0 12px;
+    letter-spacing:.11em;text-transform:uppercase;font-weight:700;
+  }
+
+  .card{
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--r);padding:20px;
+  }
+
+  .walletbar{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+    padding:14px 18px;
+  }
+  .walletbar button{margin-top:0}
+  .addr{font-size:13.5px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .dot{width:8px;height:8px;border-radius:50%;background:#6b5a44;display:inline-block;margin-right:8px;vertical-align:middle}
+  .dot.on{background:var(--green);box-shadow:0 0 0 3px rgba(123,216,143,.18)}
+
+  h3{margin:0 0 4px;font-size:16px;color:var(--text);font-weight:700}
+
+  label{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px;font-weight:600}
+  input{
+    width:100%;background:#15110c;border:1px solid var(--line);border-radius:10px;
+    color:var(--text);padding:11px 13px;font-size:14.5px;font-family:inherit;
+    transition:border-color .18s,box-shadow .18s;
+  }
+  input:focus{outline:none;border-color:var(--butter-dim);box-shadow:0 0 0 3px rgba(240,207,142,.13)}
+  input::placeholder{color:#7d6b54}
+
+  button{
+    margin-top:14px;background:var(--butter);color:#14100c;border:0;border-radius:10px;
+    padding:13px 20px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;min-height:46px;
+    transition:transform .12s,filter .12s;
+  }
+  button:hover:not(:disabled){filter:brightness(1.07)}
+  button:active:not(:disabled){transform:translateY(1px)}
+  button:disabled{opacity:.45;cursor:default}
+  button.ghost{background:transparent;color:var(--butter-dim);border:1px solid var(--line);margin-top:10px}
+  button.ghost:hover{border-color:var(--butter-dim);filter:none}
+
+  pre{
+    background:#15110c;border:1px solid var(--line);border-radius:10px;padding:14px;
+    overflow:auto;font-size:13px;color:var(--butter-dim);white-space:pre-wrap;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-height:46px;margin:10px 0 0;
+  }
+  pre.empty{color:#7d6b54;font-style:italic}
+  .status{margin-top:10px;font-size:13.5px;color:var(--muted);min-height:20px}
   .ok{color:var(--green)} .err{color:var(--red)}
   a{color:var(--butter)}
-  .walletbar{display:flex;align-items:center;gap:12px;margin:14px 0}
-  .addr{font-size:13px;color:var(--butter-dim)}
-  .note{font-size:12px;color:var(--muted);margin-top:8px}
-  .step{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--butter-dim);margin-top:4px}
+  .sub{color:var(--muted);font-size:14.5px;margin:0;line-height:1.6}
 
-    /* Live ledger ------------------------------------------------------ */
-    .ledger { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 4px; }
-    .ledger-title {
-      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em;
-      color: var(--muted); margin-top: 6px;
-    }
-    .ledger-empty { color: var(--muted); font-size: 0.9rem; padding: 8px 0; }
-    .ledger-card, .ledger-job {
-      border: 1px solid var(--hairline); border-radius: 10px; padding: 12px 14px;
-      background: rgba(255,255,255,0.02);
-    }
-    .ledger-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-    .ledger-addr {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 0.72rem; color: var(--muted); margin: 4px 0 8px; word-break: break-all;
-    }
-    .ledger-row {
-      display: flex; justify-content: space-between; font-size: 0.86rem;
-      padding: 3px 0; border-top: 1px solid rgba(255,255,255,0.04);
-    }
-    .ledger-row span { color: var(--muted); }
-    .tier {
-      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
-      padding: 3px 9px; border-radius: 999px;
-      border: 1px solid var(--hairline); color: var(--muted);
-    }
-    .tier-new { color: #60a5fa; border-color: rgba(96,165,250,0.5); }
-    .tier-trusted { color: #4ade80; border-color: rgba(74,222,128,0.5); }
-    .tier-established { color: #a78bfa; border-color: rgba(167,139,250,0.5); }
-    .tier-unproven { color: #fbbf24; border-color: rgba(251,191,36,0.5); }
-    .ledger-job { display: flex; flex-direction: column; gap: 3px; }
-    .ledger-job code { font-size: 0.84rem; color: #93c5fd; }
-    .ledger-job span { font-size: 0.78rem; color: var(--muted); }
-    .ledger-job.done span { color: #4ade80; }
-  </style>
+  /* Live ledger ------------------------------------------------------- */
+  .ledger{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;margin-top:4px}
+  .agent{
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line);border-radius:var(--r);padding:18px;
+  }
+  .agent-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .agent-name{font-weight:700;font-size:15.5px;color:var(--text)}
+  .agent-addr{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+    color:var(--muted);word-break:break-all;margin:3px 0 14px;
+  }
+  .tier{
+    font-size:10.5px;font-weight:800;letter-spacing:.1em;padding:3px 10px;border-radius:999px;
+    border:1px solid var(--line);color:var(--muted);white-space:nowrap;
+  }
+  .tier-new{color:var(--blue);border-color:rgba(138,184,240,.45);background:rgba(138,184,240,.09)}
+  .tier-trusted{color:var(--green);border-color:rgba(123,216,143,.45);background:rgba(123,216,143,.09)}
+  .tier-established{color:var(--butter);border-color:rgba(240,207,142,.45);background:rgba(240,207,142,.09)}
+  .tier-unproven{color:var(--amber);border-color:rgba(243,201,105,.45);background:rgba(243,201,105,.09)}
+
+  /* Tiles use dividers, not their own border: three nested boxes (ledger >
+     agent > tile) read as heavy. Only the value and label change weight. */
+  .stats{display:grid;grid-template-columns:1fr 1fr}
+  .stat{padding:11px 2px 11px 0}
+  .stat:nth-child(even){padding-left:14px;border-left:1px solid var(--line)}
+  .stat.wide{grid-column:1/-1;padding:12px 0 0;margin-top:4px;border-top:1px solid var(--line);border-left:none}
+  .stat-l{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .stat-v{font-size:19px;font-weight:700;margin-top:2px;letter-spacing:-.01em}
+  .stat-v.gen{color:var(--butter)}
+  .stat-v.slash{color:var(--red)}
+  .stat-v.good{color:var(--green)}
+
+  .jobs{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+  .job{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    background:#15110c;border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+  }
+  .job code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--blue)}
+  .job-meta{font-size:12.5px;color:var(--muted);white-space:nowrap}
+  .job.done .job-meta{color:var(--green)}
+  .job.waiting{border-color:rgba(243,201,105,.35)}
+
+  .jobs-title{
+    font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);font-weight:700;margin:16px 0 8px;
+  }
+  .empty{color:var(--muted);font-size:14px;padding:14px 0;text-align:center}
+  .spinner{
+    display:inline-block;width:13px;height:13px;border:2px solid var(--line);
+    border-top-color:var(--butter);border-radius:50%;animation:spin .8s linear infinite;
+    vertical-align:-2px;margin-right:8px;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .footnote{font-size:13px;color:var(--muted);margin:10px 0 0}
+  /* Three actions, one inspector. An auto-fit grid left the short cards beside
+     the tall Create Job with a ragged gap; explicit columns keep each row
+     balanced and the inspector full width where its two outputs belong. */
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+  .wide-card{grid-column:1/-1}
+  .inspect{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:640px){.inspect{grid-template-columns:1fr}}
+  @media (max-width:980px){.cols{grid-template-columns:1fr 1fr}}
+  @media (max-width:640px){.cols{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <div class="wrap">
+
   <header>
-    <span class="badge">GenLayer Project</span>
+    <span class="badge">GenLayer Intelligent Contract</span>
     <h1>Agent Reputation Ledger</h1>
-    <p class="sub">Stake-weighted reputation with slashing, authorization, and replay protection.</p>
+    <p class="lede">
+      Reputation for autonomous agents, backed by value at risk. An issuer creates a job,
+      an agent submits evidence, and a committee of AI validators verifies it. A claim the
+      evidence does not support costs the agent 10% of its stake — burned on-chain.
+    </p>
   </header>
 
   <div class="walletbar">
     <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
-    <span class="addr" id="addr">Not connected</span>
+    <span class="addr"><span class="dot" id="netDot"></span><span id="addr">Not connected</span></span>
+    <span class="addr" id="netNote" style="margin-left:auto"></span>
   </div>
-  <div class="note" id="netNote"></div>
-
-  <p class="sub" style="margin:20px 0 10px">Workflow: Register as agent → Issuer creates job → Agent records delivery → Read reputation</p>
 
   <h2>Live ledger</h2>
   <div class="card">
-    <p class="sub">Read straight from the contract on GenLayer Studio dev — no wallet needed.
-       These are real records: agents that staked GEN, jobs that were issued, and the
-       stake an agent lost when its delivery claim did not hold up.</p>
-    <div id="ledger" class="ledger"><div class="ledger-empty">Loading…</div></div>
-    <button onclick="loadLedger()">Refresh</button>
+    <p class="sub" style="margin:0 0 14px">
+      Read directly from the contract on GenLayer Studio dev — no wallet required.
+      These are real records: stake deposited, claims issued, and stake burned.
+    </p>
+    <div id="ledger" class="ledger"><div class="empty" style="grid-column:1/-1"><span class="spinner"></span>Reading the chain…</div></div>
+    <div id="jobsWrap"></div>
+    <button class="ghost" onclick="loadLedger()">Refresh</button>
+    <p class="footnote">Every figure here is a contract read. Nothing on this panel is mocked or cached.</p>
   </div>
 
-  <h2>1. Register</h2>
-  <div class="card">
-    <p class="sub">Stake GEN to register as a tracked agent (min 1 GEN).</p>
-    <label>Stake amount (GEN)</label>
-    <input id="stakeAmount" placeholder="1.0" value="1.0" />
-    <button onclick="register()">Register</button>
-    <div class="status" id="registerStatus"></div>
-  </div>
+  <h2>Act</h2>
+  <div class="cols">
+    <div class="card">
+      <h3>1 · Register as an agent</h3>
+      <p class="sub">Stake GEN to become verifiable. Minimum 1 GEN.</p>
+      <label for="stakeAmount">Stake amount (GEN)</label>
+      <input id="stakeAmount" type="number" min="1" step="1" value="1" />
+      <button onclick="register()">Register &amp; stake</button>
+      <div class="status" id="registerStatus"></div>
+    </div>
 
-  <h2>2. Create Job (issuer)</h2>
-  <div class="card">
-    <p class="sub">Create a job with a unique ID and authorized agent.</p>
-    <label>Job ID (unique)</label>
-    <input id="jobId" placeholder="job-1" />
-    <label>Agent address (authorized)</label>
-    <input id="jobAgent" placeholder="0x..." />
-    <label>Evidence URL</label>
-    <input id="evidenceUrl" placeholder="https://..." />
-    <label>Claimed delivery</label>
-    <input id="claimed" placeholder="Delivered successfully" />
-    <label>Resolve block</label>
-    <input id="resolveBlock" placeholder="1000" value="1000" />
-    <button onclick="createJob()">Create Job</button>
-    <div class="status" id="jobStatus"></div>
-  </div>
+    <div class="card">
+      <h3>2 · Create a job (issuer)</h3>
+      <p class="sub">Issue work to a specific agent, with the evidence they must produce.</p>
+      <label for="jobId">Job ID</label>
+      <input id="jobId" placeholder="job-2026-014" />
+      <label for="jobAgent">Authorized agent address</label>
+      <input id="jobAgent" placeholder="0x…" />
+      <label for="evidenceUrl">Evidence URL</label>
+      <input id="evidenceUrl" placeholder="https://github.com/org/repo/pull/1" />
+      <label for="claimed">Claimed delivery</label>
+      <input id="claimed" placeholder="Security audit report attached" />
+      <label for="resolveBlock">Resolve block</label>
+      <input id="resolveBlock" type="number" value="1000" />
+      <button onclick="createJob()">Create job</button>
+      <div class="status" id="jobStatus"></div>
+    </div>
 
-  <h2>3. Record Delivery (agent)</h2>
-  <div class="card">
-    <p class="sub">Record delivery for a job you're authorized for.</p>
-    <label>Job ID</label>
-    <input id="recordJobId" placeholder="job-1" />
-    <button onclick="record()">Record Delivery</button>
-    <div class="status" id="recordStatus"></div>
-  </div>
+    <div class="card">
+      <h3>3 · Record delivery (agent)</h3>
+      <p class="sub">Only the authorized agent may record. Each job records once.</p>
+      <label for="recordJobId">Job ID</label>
+      <input id="recordJobId" placeholder="job-2026-014" />
+      <button onclick="record()">Record delivery</button>
+      <div class="status" id="recordStatus"></div>
+    </div>
 
-  <h2>4. Get Reputation</h2>
-  <div class="card">
-    <label>Agent address</label>
-    <input id="agentRead" placeholder="0x..." />
-    <button onclick="read()">Get Reputation</button>
-    <pre id="repOut">—</pre>
-  </div>
-
-  <h2>5. Get Job</h2>
-  <div class="card">
-    <label>Job ID</label>
-    <input id="jobIdRead" placeholder="job-1" />
-    <button onclick="getJob()">Get Job</button>
-    <pre id="jobOut">—</pre>
+    <div class="card wide-card">
+      <h3>4 · Inspect</h3>
+      <p class="sub">Read any agent or job straight from the chain.</p>
+      <div class="inspect">
+        <div>
+          <label for="agentRead">Agent address</label>
+          <input id="agentRead" placeholder="0x…" />
+          <button onclick="read()">Get reputation</button>
+          <pre id="repOut" class="empty">Reputation appears here</pre>
+        </div>
+        <div>
+          <label for="jobIdRead">Job ID</label>
+          <input id="jobIdRead" placeholder="job-2026-014" />
+          <button class="ghost" onclick="getJob()">Get job</button>
+          <pre id="jobOut" class="empty">Job details appear here</pre>
+        </div>
+      </div>
+    </div>
   </div>
 
   <h2>Contract</h2>
   <div class="card">
-    <p class="sub">Deployed: <a href="https://explorer-studio-dev.genlayer.com/address/0xC9DF9d35861696D963862Ee463bF432a5C028c8D" target="_blank">0xC9DF9d35861696D963862Ee463bF432a5C028c8D</a> (GenLayer Studio dev, chain 61997)</p>
-    <p class="sub">Source + tests: <a href="https://github.com/Adebisi1111/genlayer-reputation-app" target="_blank">github.com/Adebisi1111/genlayer-reputation-app</a></p>
+    <p class="sub" style="margin:0 0 6px">
+      Deployed —
+      <a href="https://explorer-studio-dev.genlayer.com/address/0xC9DF9d35861696D963862Ee463bF432a5C028c8D" target="_blank" rel="noopener">0xC9DF9d35861696D963862Ee463bF432a5C028c8D</a>
+      on GenLayer Studio dev, chain 61997.
+    </p>
+    <p class="sub" style="margin:0">
+      Source and tests —
+      <a href="https://github.com/Adebisi1111/genlayer-reputation-app" target="_blank" rel="noopener">github.com/Adebisi1111/genlayer-reputation-app</a>
+    </p>
   </div>
-</div>
 
+</div>
 <script type="module" src="app.bundle.js"></script>
 </body>
 </html>

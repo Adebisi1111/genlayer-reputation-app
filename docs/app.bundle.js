@@ -41255,7 +41255,8 @@ async function connectWallet() {
     }
     account = client.account;
     b.textContent = "Connected: " + address;
-    note.textContent = "GenLayer Studio dev (61997) \xB7 contract " + LEDGER_ADDRESS;
+    note.textContent = "Studio dev 61997";
+    document.getElementById("netDot").classList.add("on");
     document.getElementById("connectBtn").disabled = true;
     await loadLedger();
   } catch (e) {
@@ -41372,6 +41373,7 @@ async function read() {
       functionName: "get_reputation",
       args: [agent]
     });
+    out.classList.remove("empty");
     out.textContent = typeof result === "string" ? result : JSON.stringify(result, null, 2);
   } catch (e) {
     out.textContent = "Error: " + e.message;
@@ -41391,6 +41393,7 @@ async function getJob() {
       functionName: "getJob",
       args: [jobId]
     });
+    out.classList.remove("empty");
     out.textContent = typeof result === "string" ? result : JSON.stringify(result, null, 2);
   } catch (e) {
     out.textContent = "Error: " + e.message;
@@ -41406,27 +41409,63 @@ var KNOWN_JOBS = [
   ["job-release", "Alice"]
 ];
 var GEN = 1e18;
-function card(rec, label) {
-  const stake = rec.staked / GEN;
-  const rows = [
-    ["staked", stake.toFixed(2) + " GEN"],
-    ["completed", rec.completed],
-    ["failed", rec.failed],
-    ["slashed", rec.slashed_count],
-    ["slash points", (rec.slash_points / GEN).toFixed(2) + " GEN"],
-    ["score", rec.score],
-    ["tier", rec.tier]
-  ];
+function tile(label, value, cls) {
+  const d = document.createElement("div");
+  d.className = "stat";
+  const l = document.createElement("div");
+  l.className = "stat-l";
+  l.textContent = label;
+  const v = document.createElement("div");
+  v.className = "stat-v" + (cls ? " " + cls : "");
+  v.textContent = value;
+  d.append(l, v);
+  return d;
+}
+function agentCard(rec, label) {
   const el = document.createElement("div");
-  el.className = "ledger-card";
-  el.innerHTML = `<div class="ledger-head"><strong>${label}</strong><span class="tier tier-${(rec.tier || "").toLowerCase()}">${rec.tier}</span></div><div class="ledger-addr">${rec.agent}</div>` + rows.map(([k, v]) => `<div class="ledger-row"><span>${k}</span><b>${v}</b></div>`).join("");
+  el.className = "agent";
+  const top = document.createElement("div");
+  top.className = "agent-top";
+  const name = document.createElement("div");
+  name.className = "agent-name";
+  name.textContent = label;
+  const tier = document.createElement("span");
+  tier.className = "tier tier-" + String(rec.tier || "").toLowerCase();
+  tier.textContent = rec.tier;
+  top.append(name, tier);
+  const addr = document.createElement("div");
+  addr.className = "agent-addr";
+  addr.textContent = rec.agent;
+  const stats = document.createElement("div");
+  stats.className = "stats";
+  stats.append(
+    tile("Stake at risk", (rec.staked / GEN).toFixed(2) + " GEN", "gen"),
+    tile("Score", String(rec.score), rec.score >= 70 ? "good" : ""),
+    tile("Completed", String(rec.completed), rec.completed > 0 ? "good" : ""),
+    tile("Failed", String(rec.failed), rec.failed > 0 ? "slash" : "")
+  );
+  if (rec.slash_points > 0) {
+    const wide = document.createElement("div");
+    wide.className = "stat wide";
+    const l = document.createElement("div");
+    l.className = "stat-l";
+    l.textContent = "Stake burned by slashing";
+    const v = document.createElement("div");
+    v.className = "stat-v slash";
+    v.textContent = (rec.slash_points / GEN).toFixed(2) + " GEN across " + rec.slashed_count + (rec.slashed_count === 1 ? " claim" : " claims");
+    wide.append(l, v);
+    stats.appendChild(wide);
+  }
+  el.append(top, addr, stats);
   return el;
 }
 async function loadLedger() {
   const box = document.getElementById("ledger");
+  const jobsWrap = document.getElementById("jobsWrap");
   if (!box) return;
   if (!client) client = createClient2({ chain: studioDevnet });
-  box.innerHTML = '<div class="ledger-empty">Reading the ledger on-chain\u2026</div>';
+  box.innerHTML = '<div class="empty" style="grid-column:1/-1"><span class="spinner"></span>Reading the chain\u2026</div>';
+  if (jobsWrap) jobsWrap.innerHTML = "";
   try {
     const agents = [];
     for (const [addr, label] of KNOWN_AGENTS) {
@@ -41454,33 +41493,31 @@ async function loadLedger() {
       }
     }
     if (!agents.length) {
-      box.innerHTML = '<div class="ledger-empty">No agents registered yet.</div>';
+      box.innerHTML = '<div class="empty" style="grid-column:1/-1">No agents registered yet. Connect a wallet and stake 1 GEN to create the first record.</div>';
       return;
     }
     box.innerHTML = "";
-    const h = document.createElement("div");
-    h.className = "ledger-title";
-    h.textContent = "Live ledger \u2014 read from the contract";
-    box.appendChild(h);
-    agents.forEach(([rec, label]) => box.appendChild(card(rec, label)));
-    if (jobs.length) {
+    agents.forEach(([rec, label]) => box.appendChild(agentCard(rec, label)));
+    if (jobs.length && jobsWrap) {
       const jt = document.createElement("div");
-      jt.className = "ledger-title";
-      jt.textContent = "Jobs";
-      box.appendChild(jt);
+      jt.className = "jobs-title";
+      jt.textContent = "Jobs issued";
+      const list = document.createElement("div");
+      list.className = "jobs";
+      jobsWrap.append(jt, list);
       for (const [j, who] of jobs) {
         const d = document.createElement("div");
-        d.className = "ledger-job" + (j.recorded ? " done" : "");
+        d.className = "job" + (j.recorded ? " done" : " waiting");
         const jid = document.createElement("code");
         jid.textContent = j.job_id;
         const meta = document.createElement("span");
         meta.textContent = `${who} \xB7 ${j.recorded ? "recorded" : "awaiting delivery"}`;
         d.append(jid, meta);
-        box.appendChild(d);
+        list.appendChild(d);
       }
     }
   } catch (e) {
-    box.innerHTML = '<div class="ledger-empty">Could not read the ledger: ' + e.message + "</div>";
+    box.innerHTML = '<div class="empty" style="grid-column:1/-1">Could not read the ledger: ' + e.message + "</div>";
   }
 }
 window.connectWallet = connectWallet;

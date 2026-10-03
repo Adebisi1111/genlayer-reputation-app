@@ -27,6 +27,21 @@ and no agent could leave UNREGISTERED. The 2.x runner also renamed
 `gl.vm.run_nondet_unsafe`, so every delivery failed. Both are fixed and
 covered by source-level regression tests.
 
+## What is verified, and what is not
+
+Verified on-chain against the deployed contract, read from the browser with no
+wallet connected: the live ledger renders 2 staked agents and 3 recorded jobs,
+with stake, score, completed, failed and slash figures taken from contract
+storage.
+
+Verified by transaction through `genlayer-js` directly: `register` with value,
+`createJob`, and `record_delivery` — all reaching `execution_result: SUCCESS`.
+
+NOT verified: a write submitted through the browser UI. That path needs a
+wallet that can sign, which a headless test browser cannot provide. It is the
+one gap in the evidence; the code path is shared with the tested one and the
+fee/estimate/result-wait logic is exercised by every scripted write.
+
 ## Tests
 
 `python3 -m pytest tests/ -q` — 23 passing.

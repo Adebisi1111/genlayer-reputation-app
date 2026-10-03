@@ -101,11 +101,25 @@ class AgentReputationLedger(gl.contract.Contract):
             leader_decision = leader_result.calldata["decision"]
             return validator_decision == leader_decision
 
-        verified = gl.vm.run_nondet_unsafe(leader, validator)
+        # run_nondet_unsafe was renamed in the 2.x runner. The old name fails
+        # at call time with
+        #   AttributeError: module 'genlayer.vm' has no attribute
+        #   'run_nondet_unsafe'. Did you mean: 'run_nondet_default'?
+        # which the SDK reports only as a bare `exit_code 1`.
+        verified = gl.vm.run_nondet_default(leader, validator)
         return verified["decision"]
 
-    @gl.public.write
+    @gl.public.write.payable
     def register(self) -> None:
+        """Stake GEN. Payable is mandatory, not decorative.
+
+        Without `.payable` the runtime rejects the call with
+        `called non-payable method register with non-zero value`, so an agent
+        could never stake - and therefore never reach a tier above
+        UNREGISTERED. Commit cf1c284 dropped the minimum-stake check because
+        the CLI could not send value; the correct fix was to mark the method
+        payable, not to remove the check that value feeds.
+        """
         minimum_stake = u256(1000000000000000000)
         sender = gl.message.sender_address.as_hex
         if gl.message.value < minimum_stake:

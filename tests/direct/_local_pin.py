@@ -24,9 +24,15 @@ _EXPLICIT_IMPORTS = re.compile(
 )
 
 
+# The 2.x runner renamed this entrypoint; the local 1.x runner still has the
+# old name. Rewrite it back so tests exercise the same logic.
+_NONDET = re.compile(r"gl\.vm\.run_nondet_default\b")
+
+
 def build() -> Path:
     src = re.sub(r"py-genlayer:[a-z0-9]+", LOCAL_PIN, SRC.read_text(), count=1)
     src = src.replace("gl.contract.Contract", "gl.Contract")
+    src = _NONDET.sub("gl.vm.run_nondet_unsafe", src)
     src, n = _EXPLICIT_IMPORTS.subn("from genlayer import *", src)
     if n != 1:
         raise RuntimeError(

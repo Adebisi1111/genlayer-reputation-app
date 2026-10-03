@@ -74,6 +74,47 @@ def test_register_requires_the_minimum_stake(direct_vm, direct_deploy, direct_al
     assert out["exists"] is False, out
 
 
+def test_nondet_entrypoint_matches_the_chain_runner(direct_vm, direct_deploy):
+    """Regression: the 2.x runner renamed `run_nondet_unsafe`.
+
+    Calling the old name fails at consensus time with an AttributeError that
+    the SDK reports only as a bare `exit_code 1`, so the contract deploys fine,
+    registers agents fine, and then fails on the one method that matters.
+    Direct mode runs the 1.x runner, which still has the old name, so tests
+    cannot catch this - only a source check can.
+    """
+    import re
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parents[2] / "contracts" / "agent_reputation_ledger.py"
+    text = src.read_text()
+    assert "run_nondet_unsafe" not in text.replace(
+        "run_nondet_unsafe was renamed", ""
+    ).replace("'run_nondet_unsafe'. Did you mean", ""), \
+        "the chain source still calls run_nondet_unsafe, which 2.x removed"
+    assert "gl.vm.run_nondet_default(" in text, "must call run_nondet_default"
+
+
+def test_register_is_payable(direct_vm, direct_deploy):
+    """Regression: `register` must be `@gl.public.write.payable`.
+
+    Commit cf1c284 removed the minimum-stake check because the CLI could not
+    send value. On-chain the runtime then rejects any stake with
+    `called non-payable method register with non-zero value`, so an agent can
+    never stake and never leaves UNREGISTERED. Direct mode does not enforce
+    payability, so only this source-level check catches it before deployment.
+    """
+    import re
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parents[2] / "contracts" / "agent_reputation_ledger.py"
+    text = src.read_text()
+    assert "@gl.public.write.payable" in text, "register is not declared payable"
+    m = re.search(r"@gl\.public\.write(?:\.payable)?\s*\n\s*def register", text)
+    assert m is not None, "register not found"
+    assert ".payable" in m.group(0), "the decorator immediately above register lacks .payable"
+
+
 def test_register_records_the_staked_amount(direct_vm, direct_deploy, direct_alice):
     contract = direct_deploy("contracts/_local_pin_ledger.py")
     _register(contract, direct_vm, direct_alice, stake=5 * ONE_GEN)

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="t d">
+  <title id="t">Agent Reputation Ledger</title>
+  <desc id="d">A stacked ledger of stake, verified by consensus, with one bar burned away by slashing.</desc>
+
+  <defs>
+    <linearGradient id="gen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7dda6"/>
+      <stop offset="1" stop-color="#d4a85c"/>
+    </linearGradient>
+    <linearGradient id="loss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0a08c"/>
+      <stop offset="1" stop-color="#c95b4a"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+  </defs>
+
+  <!-- ground: the chain the record lives on -->
+  <rect width="512" height="512" rx="112" fill="#14100c"/>
+  <ellipse cx="256" cy="404" rx="150" ry="20" fill="#f0cf8e" opacity=".13" filter="url(#soft)"/>
+
+  <!--
+    The stack is the stake: three coins on a ledger, sized by weight of value.
+    The top bar is intact and gold; the bottom bar is cut away and red, which is
+    what a slash looks like - not an explosion, a missing amount.
+  -->
+  <g>
+    <!-- bottom: slashed, offset and dimmed so it reads as lost value -->
+    <rect x="126" y="322" width="260" height="42" rx="21"
+          fill="none" stroke="#8a4a3e" stroke-width="9"
+          stroke-dasharray="17 15" opacity=".92"/>
+    <rect x="126" y="322" width="78" height="42" rx="21" fill="#f0907c" opacity=".30"/>
+
+    <!-- middle: intact -->
+    <rect x="146" y="248" width="220" height="42" rx="21"
+          fill="none" stroke="#c79a56" stroke-width="9" opacity=".78"/>
+
+    <!-- top: full weight, the reputation itself -->
+    <rect x="166" y="174" width="180" height="42" rx="21"
+          fill="url(#gen)" stroke="#f0cf8e" stroke-width="7"/>
+    <path d="M196 195h34M256 195h58" stroke="#14100c" stroke-width="8" stroke-linecap="round" opacity=".62"/>
+  </g>
+
+  <!--
+    Consensus: three nodes at different heights converging into one. Two agree
+    (gold), one is still deciding (dimmed), which is what a vote in progress
+    actually looks like.
+  -->
+  <g stroke="#f0cf8e" stroke-width="7" stroke-linecap="round" opacity=".85">
+    <path d="M108 232c26-30 58-44 96-46" fill="none"/>
+    <path d="M404 232c-26-30-58-44-96-46" fill="none"/>
+  </g>
+  <circle cx="104" cy="240" r="15" fill="#f0cf8e"/>
+  <circle cx="408" cy="240" r="15" fill="#f0cf8e"/>
+  <circle cx="256" cy="118" r="26" fill="#f0cf8e"/>
+  <circle cx="256" cy="118" r="11" fill="#14100c"/>
+  <circle cx="104" cy="240" r="6" fill="#14100c"/>
+  <circle cx="408" cy="240" r="6" fill="#14100c"/>
+
+  <!-- the burned amount, marked at the cut -->
+  <g stroke="#f0907c" stroke-width="8" stroke-linecap="round">
+    <path d="M372 316l30 30M402 316l-30 30"/>
+  </g>
+</svg>

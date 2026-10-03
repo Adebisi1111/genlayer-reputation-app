@@ -9,7 +9,7 @@
   "dependencies": {
     "esbuild": "^0.28.2",
     "express": "^4.21.2",
-    "genlayer-js": "^1.1.8",
+    "genlayer-js": "^2.0.0-rc.1",
     "viem": "^2.37.2"
   }
 }

@@ -7,7 +7,7 @@ import json
 
 
 def test_record_success_builds_trusted(direct_vm, direct_deploy, direct_alice):
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
 
     direct_vm.mock_web(r".*e\.test.*", {"status": 200, "body": "Job completed successfully."})
@@ -25,7 +25,7 @@ def test_record_success_builds_trusted(direct_vm, direct_deploy, direct_alice):
 
 def test_unverified_claim_reverts(direct_vm, direct_deploy, direct_alice):
     """If the evidence contradicts the claim, record_outcome must revert."""
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
     direct_vm.mock_web(r".*e\.test.*", {"status": 200, "body": "Job failed, no delivery."})
     direct_vm.mock_llm(r".*", json.dumps({"decision": "FAIL"}))
@@ -41,7 +41,7 @@ def test_unverified_claim_reverts(direct_vm, direct_deploy, direct_alice):
 
 
 def test_dispute_penalty_lowers_tier(direct_vm, direct_deploy, direct_alice):
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
     direct_vm.mock_web(r".*e\.test.*", {"status": 200, "body": "evidence"})
     direct_vm.mock_llm(r".*", json.dumps({"decision": "SUCCESS"}))
@@ -60,7 +60,7 @@ def test_dispute_penalty_lowers_tier(direct_vm, direct_deploy, direct_alice):
 
 
 def test_invalid_outcome_reverts(direct_vm, direct_deploy, direct_alice):
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
     try:
         contract.record_outcome(agent=direct_alice, outcome="BOGUS", evidence_url="https://e.test/x")
@@ -70,7 +70,7 @@ def test_invalid_outcome_reverts(direct_vm, direct_deploy, direct_alice):
 
 
 def test_unknown_agent_returns_zeroed(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_bob
     out = json.loads(contract.get_reputation(agent=direct_alice))
     assert out["exists"] is False
@@ -80,7 +80,7 @@ def test_unknown_agent_returns_zeroed(direct_vm, direct_deploy, direct_alice, di
 
 def test_consensus_validator_agrees(direct_vm, direct_deploy, direct_alice):
     """Canonical equivalence check: leader + validator agree on the decision."""
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
     direct_vm.mock_web(r".*e\.test.*", {"status": 200, "body": "Job completed."})
     direct_vm.mock_llm(r".*", json.dumps({"decision": "SUCCESS"}))

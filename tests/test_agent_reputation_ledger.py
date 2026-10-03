@@ -9,7 +9,7 @@ def _hex(addr):
 
 def test_register_and_create_job(direct_vm, direct_deploy, direct_alice, direct_bob):
     """Steward asked: create each job on-chain with unique ID + authorized counterparty."""
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
     direct_vm.value = 6000000000000000000
     contract.register()
@@ -29,7 +29,7 @@ def test_register_and_create_job(direct_vm, direct_deploy, direct_alice, direct_
 
 def test_authorized_agent_records_delivery(direct_vm, direct_deploy, direct_alice, direct_bob):
     """Steward asked: only authorized agent can record delivery."""
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
     direct_vm.value = 6000000000000000000
     contract.register()
@@ -51,7 +51,7 @@ def test_authorized_agent_records_delivery(direct_vm, direct_deploy, direct_alic
 
 def test_unauthorized_write_reverts(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
     """Steward asked: test unauthorized writes."""
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
     direct_vm.value = 6000000000000000000
     contract.register()
@@ -72,7 +72,7 @@ def test_unauthorized_write_reverts(direct_vm, direct_deploy, direct_alice, dire
 
 def test_duplicate_evidence_reverts(direct_vm, direct_deploy, direct_alice, direct_bob):
     """Steward asked: test duplicate evidence. Same evidence URL can't be reused."""
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
     direct_vm.value = 6000000000000000000
     contract.register()
@@ -94,7 +94,7 @@ def test_duplicate_evidence_reverts(direct_vm, direct_deploy, direct_alice, dire
 
 def test_fetch_failure_handled(direct_vm, direct_deploy, direct_alice, direct_bob):
     """Steward asked: test fetch failures."""
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
     direct_vm.value = 6000000000000000000
     contract.register()
@@ -116,7 +116,7 @@ def test_fetch_failure_handled(direct_vm, direct_deploy, direct_alice, direct_bo
 
 def test_low_score_dispute_arithmetic(direct_vm, direct_deploy, direct_alice):
     """Steward asked: test low-score dispute arithmetic. Score clamps at 0."""
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
     direct_vm.value = 1000000000000000000
     contract.register()
@@ -136,7 +136,7 @@ def test_low_score_dispute_arithmetic(direct_vm, direct_deploy, direct_alice):
 
 def test_malformed_model_decision_rejected(direct_vm, direct_deploy, direct_alice, direct_bob):
     """Steward asked: reject malformed model decisions."""
-    contract = direct_deploy("contracts/agent_reputation_ledger.py")
+    contract = direct_deploy("contracts/_local_pin_ledger.py")
     direct_vm.sender = direct_alice
     direct_vm.value = 6000000000000000000
     contract.register()

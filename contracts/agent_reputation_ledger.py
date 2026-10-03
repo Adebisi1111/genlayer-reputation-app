@@ -1,8 +1,15 @@
-# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
+# { "Depends": "py-genlayer:5jycge4q8k23462jtb0b9fyey1s9qz928sz2nbrd9mg4sxqg2qng" }
 
 import json
 from dataclasses import dataclass
-from genlayer import *
+
+# Explicit imports: Studio Next (61997) loads the 2.x runner, which rejects
+# both the star-import form and the `gl.Contract` base class. The Bradbury
+# deployment this replaced used the 1.x form and still runs there.
+import genlayer as gl
+from genlayer import Address, u256
+from genlayer.storage import TreeMap
+from genlayer.storage import allow as allow_storage
 
 # Agent Reputation Ledger — full workflow per steward review.
 #
@@ -42,7 +49,7 @@ class AgentRecord:
     slash_points: u256
 
 
-class AgentReputationLedger(gl.Contract):
+class AgentReputationLedger(gl.contract.Contract):
     jobs: TreeMap[str, Job]
     agents: TreeMap[str, AgentRecord]
     # Global evidence dedup: evidence_url -> "used"
